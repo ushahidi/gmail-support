@@ -21,6 +21,16 @@
     "config": {
         "sort-packages": true
     },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "3.0-dev"
+        },
+        "laravel": {
+            "providers": [
+                "Ushahidi\\Gmail\\GmailServiceProvider"
+            ]
+        }
+    },
     "autoload": {
         "psr-4": {
             "Ushahidi\\Gmail\\": "src"
