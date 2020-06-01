@@ -4,7 +4,7 @@ namespace Ushahidi\Gmail;
 
 use Illuminate\Support\ServiceProvider;
 
-class PostmarkServiceProvider extends ServiceProvider
+class GmailServiceProvider extends ServiceProvider
 {
     /**
      * Boot the service provider.
