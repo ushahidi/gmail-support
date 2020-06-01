@@ -13,9 +13,9 @@ class GmailServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->registerGmailTransport();
-
         $this->registerGmailSource();
+
+        $this->registerGmailTransport();
     }
 
     /**
@@ -39,7 +39,7 @@ class GmailServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    private function registerGmailTransportDriver()
+    private function registerGmailTransport()
     {
         if (! $this->shouldRegisterGmailTransportDriver()) {
             return;
