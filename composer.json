@@ -9,6 +9,9 @@
             "email": "wisdomaebong@gmail.com"
         }
     ],
+    "require": {
+        "google/apiclient": "^2.0@dev"
+    },
     "minimum-stability": "dev",
-    "require": {}
+    "prefer-stable": true
 }
