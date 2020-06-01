@@ -1,0 +1,14 @@
+{
+    "name": "ushahidi/gmail-support",
+    "description": "Gmail Support",
+    "type": "library",
+    "license": "GNU",
+    "authors": [
+        {
+            "name": "Wisdom Ebong",
+            "email": "wisdomaebong@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
