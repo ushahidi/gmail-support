@@ -6,15 +6,13 @@ use Google_Client;
 use Google_Service_Gmail;
 use Illuminate\Support\Facades\Storage;
 
-class GmailConnection extends Google_Client
+class GmailConnector extends Google_Client
 {
-    private $_config;
+    public $user;
 
     protected $disk;
 
-    public $user = 'me';
-
-    public $service;
+    private $_config;
 
     public function __construct($config)
     {
@@ -114,18 +112,18 @@ class GmailConnection extends Google_Client
     }
 
     /**
-	 * Delete the credentials in a file
-	 */
-	public function deleteAccessToken()
-	{
-		$file = $this->getFile();
+     * Delete the credentials in a file
+     */
+    public function deleteAccessToken()
+    {
+        $file = $this->getFile();
 
-		if ($this->disk->exists($file)) {
-			$this->disk->delete($file);
-		}
+        if ($this->disk->exists($file)) {
+            $this->disk->delete($file);
+        }
 
         $this->saveConfigToFile($file, []);
-	}
+    }
 
     /**
      * Check if token exists and is expired
@@ -190,18 +188,18 @@ class GmailConnection extends Google_Client
             $this->disk->delete($file);
         }
 
-       $this->saveConfigToFile($config, $file);
+        $this->saveConfigToFile($config, $file);
     }
 
     /**
-	 * Updates / sets the current user for the service
-	 *
-	 * @return \Google_Service_Gmail_Profile
-	 */
-	public function setUser($user)
-	{
-		$this->user = $user;
-		return $this;
+     * Updates / sets the current user for the service
+     *
+     * @return \Google_Service_Gmail_Profile
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+        return $this;
     }
     
     public function setDisk($disk)
@@ -258,10 +256,10 @@ class GmailConnection extends Google_Client
         $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
 
         if ($allowJsonEncrypt) {
-			$this->disk->put($file, encrypt(json_encode($config)));
-		} else {
-			$this->disk->put($file, json_encode($config));
-		}
+            $this->disk->put($file, encrypt(json_encode($config)));
+        } else {
+            $this->disk->put($file, json_encode($config));
+        }
     }
 
     /**

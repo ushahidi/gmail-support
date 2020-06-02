@@ -9,5 +9,5 @@ class GmailSource extends Email
     public function __construct()
     {
         # code...
-    } 
+    }
 }

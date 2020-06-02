@@ -29,7 +29,7 @@ class GmailServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->app['datasource']->extend('gmail', function($config) {
+        $this->app['datasource']->extend('gmail', function ($config) {
             return new GmailSource($config);
         });
     }

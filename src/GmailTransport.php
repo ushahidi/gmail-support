@@ -2,7 +2,7 @@
 
 namespace Ushahidi\Gmail;
 
-class GmailTransport 
+class GmailTransport
 {
 
 }
