@@ -2,151 +2,58 @@
 
 namespace Ushahidi\Gmail;
 
+use Exception;
 use Google_Client;
 use Google_Service_Gmail;
-use Illuminate\Support\Facades\Storage;
+use Google_Service_Gmail_Profile;
 
 class GmailConnector extends Google_Client
 {
     public $user;
 
-    protected $disk;
+    public $service;
 
-    private $_config;
+    protected $configuration;
 
-    public function __construct($config)
+    protected $storage;
+
+    public function __construct($config = null, $user = null)
     {
-        if (class_basename($config) === 'Application') {
-            $config = $config['config'];
-        }
+        $this->user = $user;
 
-        $this->_config = $config;
+        $this->configuration = $config = $this->getGmailConfig($config);
 
-        parent::__construct($this->getConfigs());
+        parent::__construct($config);
 
-        $this->configureClient();
+        $this->setAccessType($config['access_type']);
+
+        $this->setApprovalPrompt($config['approval_prompt']);
+
+        $this->setScopes(Google_Service_Gmail::MAIL_GOOGLE_COM);
 
         if ($this->hasToken()) {
             $this->refreshTokenIfNeeded();
         }
-
-        $this->disk = Storage::disk('local');
     }
 
-    public function getConfigs()
+    public function getGmailConfig($config)
     {
         return [
-            'client_secret' => $this->_config['services.gmail.client_secret'],
-            'client_id' => $this->_config['services.gmail.client_id'],
-            'redirect_uri' => $this->_config['services.gmail.redirect_url'],
-            'state' => isset($this->_config['services.gmail.state']) ? $this->_config['services.gmail.state'] : null,
+            'access_type' => $config['services.gmail.access_type'] ?? 'offline',
+            'approval_prompt' => $config['services.gmail.approval_prompt'] ?? 'select_account consent',
+            'client_secret' => $config['services.gmail.client_secret'],
+            'client_id' => $config['services.gmail.client_id'],
+            'redirect_uri' => $config['services.gmail.redirect_url'],
+            'state' => $config['services.gmail.state'] ?? null,
         ];
     }
 
-    public function config($string = null)
-    {
-        $file = $this->getFile();
-
-        if ($this->disk->exists($file)) {
-            $config = $this->getConfigFromFile($file);
-
-            if ($string) {
-                if (isset($config[$string])) {
-                    return $config[$string];
-                }
-            } else {
-                return $config;
-            }
-        }
-
-        return null;
-    }
-
     /**
-     * Check and return true if the user has a saved token
-     *
-     * @return bool
+     * @return array|null
      */
-    public function hasToken()
-    {
-        $config = $this->config();
-
-        return !empty($config['access_token']);
-    }
-
-    public function getToken()
-    {
-        return parent::getAccessToken() ?: $this->config();
-    }
-
-    public function setToken($token)
-    {
-        $this->setAccessToken($token);
-    }
-
-    /**
-     * @return array|string
-     * @throws \Exception
-     */
-    public function createToken($code)
-    {
-        if ($this->isAccessTokenExpired()) {
-            if (!is_null($code) && !empty($code)) {
-                $accessToken = $this->fetchAccessTokenWithAuthCode($code);
-                if ($this->haveReadScope()) {
-                    $me = $this->getProfile();
-                    if (property_exists($me, 'emailAddress')) {
-                        $this->emailAddress = $me->emailAddress;
-                        $accessToken['email'] = $me->emailAddress;
-                    }
-                }
-                $this->addAccessToken($accessToken);
-
-                return $accessToken;
-            } else {
-                throw new \Exception('No access token');
-            }
-        } else {
-            return $this->getAccessToken();
-        }
-    }
-
-    /**
-     * Delete the credentials in a file
-     */
-    public function deleteAccessToken()
-    {
-        $file = $this->getFile();
-
-        if ($this->disk->exists($file)) {
-            $this->disk->delete($file);
-        }
-
-        $this->saveConfigToFile($file, []);
-    }
-
-    /**
-     * Check if token exists and is expired
-     * Throws an AuthException when the auth file its empty or with the wrong token
-     *
-     * @return bool Returns True if the access_token is expired.
-     */
-    public function isAccessTokenExpired()
-    {
-        $token = $this->getToken();
-
-        if ($token) {
-            $this->setAccessToken($token);
-        }
-
-        return parent::isAccessTokenExpired();
-    }
-
     public function getAccessToken()
     {
-        $token = parent::getAccessToken() ?: $this->config();
-
-        return $token;
+        return parent::getAccessToken() ?: $this->token();
     }
 
     /**
@@ -159,42 +66,121 @@ class GmailConnector extends Google_Client
     }
 
     /**
-     * @param array|string  $token
+     * Delete the credentials in a file
      */
-    public function setAccessToken($token)
+    public function deleteAccessToken()
     {
-        parent::setAccessToken($token);
+        $this->storage->delete();
     }
 
     /**
-     * Save the credentials in a file
+     * Save the token credentials to storage
      *
-     * @param array $config
+     * @param array $token
      */
-    public function saveAccessToken(array $config)
+    public function saveAccessToken(array $token)
     {
-        $file = $this->getFile();
-        $config['email'] = $this->emailAddress;
+        $token['email'] = $this->user;
 
-        if ($this->disk->exists($file)) {
-            if (empty($config['email'])) {
-                $savedConfigToken = $this->getConfigFromFile($file);
+        $this->storage->save($token);
+    }
 
-                if (isset($savedConfigToken['email'])) {
-                    $config['email'] = $savedConfigToken['email'];
-                }
-            }
+    /**
+     * Check if token exists and is expired
+     * Throws an AuthException when the auth file its empty or with the wrong token
+     *
+     * @return bool Returns True if the access_token is expired.
+     */
+    public function isAccessTokenExpired()
+    {
+        $token = $this->getAccessToken();
 
-            $this->disk->delete($file);
+        if ($token) {
+            $this->setAccessToken($token);
         }
 
-        $this->saveConfigToFile($config, $file);
+        return parent::isAccessTokenExpired();
+    }
+
+    /**
+     * Check and return true if the connected user already has a saved token
+     *
+     * @return bool
+     */
+    public function hasToken()
+    {
+        $config = $this->getToken();
+
+        return !empty($config['access_token']);
+    }
+
+    /**
+     * @param null $key
+     * @return mixed
+     */
+    public function getToken($key = null)
+    {
+        return $this->storage->get($key);
+    }
+
+    /**
+     * @param $token
+     */
+    public function setToken($token)
+    {
+        $this->setAccessToken($token);
+    }
+
+    /**
+     * @param $code
+     * @return array|string
+     * @throws Exception
+     */
+    public function makeToken($code)
+    {
+        if (!$this->isAccessTokenExpired()) {
+            return $this->getAccessToken();
+        }
+
+        if (!is_null($code) && !empty($code)) {
+            $accessToken = $this->fetchAccessTokenWithAuthCode($code);
+            $me = $this->getProfile();
+            if (property_exists($me, 'emailAddress')) {
+                $this->user = $me->emailAddress;
+                $accessToken['email'] = $me->emailAddress;
+            }
+
+            $this->addAccessToken($accessToken);
+
+            return $accessToken;
+        } else {
+            throw new Exception('No access token');
+        }
+    }
+
+    /**
+     * Gets user profile from Gmail
+     *
+     * @return Google_Service_Gmail_Profile
+     */
+    public function getProfile()
+    {
+        return $this->service->users->getProfile('me');
+    }
+
+    /**
+     * @return Google_Service_Gmail
+     */
+    public function getService()
+    {
+        return $this->service = new Google_Service_Gmail($this);
     }
 
     /**
      * Updates / sets the current user for the service
      *
-     * @return \Google_Service_Gmail_Profile
+     * @param $user
+     * @return GmailConnector
      */
     public function setUser($user)
     {
@@ -202,64 +188,10 @@ class GmailConnector extends Google_Client
         return $this;
     }
     
-    public function setDisk($disk)
+    public function setStorage($storage)
     {
-        $this->disk = $disk;
-        return $this;
-    }
-
-    private function configureClient()
-    {
-        $type = $this->_config['services.gmail.access_type'] ?? 'offline';
-        $approval_prompt = $this->_config['services.gmail.approval_prompt'] ?? 'select_account consent';
-
-        $this->setScopes(Google_Service_Gmail::MAIL_GOOGLE_COM);
-
-        $this->setAccessType($type);
-
-        $this->setApprovalPrompt($approval_prompt);
-    }
-
-    private function getFile()
-    {
-        $fileName = $this->getFileName();
-        return "gmail/tokens/$fileName.json";
-    }
-
-    private function getFileName()
-    {
-        $user = $this->user;
-
-        $credentialFilename = $this->_config['gmail.credentials_file_name'];
-        $allowMultipleCredentials = $this->_config['gmail.allow_multiple_credentials'];
-
-        if (isset($user) && $allowMultipleCredentials) {
-            return sprintf('%s-%s', $credentialFilename, $user);
-        }
-
-        return $credentialFilename;
-    }
-
-    private function getConfigFromFile($file)
-    {
-        $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
-
-        if ($allowJsonEncrypt) {
-            $config = json_decode(decrypt($this->disk->get($file)), true);
-        } else {
-            $config = json_decode($this->disk->get($file), true);
-        }
-    }
-
-    private function saveConfigToFile($config, $file)
-    {
-        $allowJsonEncrypt = $this->_config['gmail.allow_json_encrypt'];
-
-        if ($allowJsonEncrypt) {
-            $this->disk->put($file, encrypt(json_encode($config)));
-        } else {
-            $this->disk->put($file, json_encode($config));
-        }
+        $this->storage = $storage;
+        return $storage;
     }
 
     /**
@@ -277,6 +209,6 @@ class GmailConnector extends Google_Client
             return $token;
         }
 
-        return $this->token;
+        return $this->getAccessToken();
     }
 }

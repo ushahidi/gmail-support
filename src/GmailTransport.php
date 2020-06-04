@@ -2,16 +2,24 @@
 
 namespace Ushahidi\Gmail;
 
+use Swift_Mime_SimpleMessage;
 use Illuminate\Mail\Transport\Transport;
 
 class GmailTransport extends Transport
 {
-    protected $client;
 
-    public function __construct($client, $key)
+    public function __construct()
     {
-        $this->key = $key;
-        $this->client = $client;
+
     }
 
+    /**
+     * @param Swift_Mime_SimpleMessage $message
+     * @param string[]|null $failedRecipients
+     * @return int
+     */
+    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    {
+        // TODO: Implement send() method.
+    }
 }
