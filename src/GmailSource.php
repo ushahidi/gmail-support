@@ -2,9 +2,9 @@
 
 namespace Ushahidi\Gmail;
 
-use Ushahidi\App\DataSource\Email;
+use Ushahidi\App\DataSource\IncomingAPIDataSource;
 
-class GmailSource extends Email
+class GmailSource implements IncomingAPIDataSource
 {
     public function __construct()
     {
