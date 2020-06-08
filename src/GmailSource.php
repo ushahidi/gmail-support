@@ -13,7 +13,7 @@ class GmailSource implements IncomingAPIDataSource
      */
     public $contact_type = Contact::EMAIL;
 
-    public function __construct()
+    public function __construct($config)
     {
         # code...
     }

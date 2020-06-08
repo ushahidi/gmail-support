@@ -2,17 +2,14 @@
 
 namespace Ushahidi\Gmail;
 
-use Google_Service_Gmail;
 use Ushahidi\Gmail\Concerns\Mail;
 use Ushahidi\Gmail\Concerns\Mailbox;
 
-class Gmail
+class Gmail extends GmailConnector
 {
     use Mail, Mailbox;
 
-    public $client;
-
-    public $service;
+    public $user;
 
     /**
      * Optional parameter for getting single and multiple emails
@@ -23,18 +20,21 @@ class Gmail
 
     /**
      * Gmail constructor.
-     *
-     * @param GmailConnector $client
+     * @param $config
+     * @param $user
      */
-    public function __construct(GmailConnector $client)
+    public function __construct($config, $user = null)
     {
-        $this->client = $client;
-        $this->service = new Google_Service_Gmail($client);
+        if (class_basename($config) === 'Application') {
+            $config = $config['config'];
+        }
+        $this->user = $user;
+        parent::__construct($config, $user);
     }
     
     public function getUser()
     {
-        return $this->client->user();
+        return $this->getProfile();
     }
 
     /**
@@ -44,6 +44,6 @@ class Gmail
      */
     public function getAuthUrl()
     {
-        return $this->client->createAuthUrl();
+        return $this->createAuthUrl();
     }
 }

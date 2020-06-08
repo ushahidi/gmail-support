@@ -8,11 +8,11 @@ use Ushahidi\Gmail\Contracts\TokenStorage;
 
 class TokenDiskStorage implements TokenStorage
 {
-    public $allow_json_encrypt = true;
-
-    public $credentials_file_name = 'gmail_token';
+    protected $allow_json_encrypt = true;
 
     protected $disk;
+
+    protected $user;
 
     public function __construct()
     {
@@ -73,7 +73,9 @@ class TokenDiskStorage implements TokenStorage
         $allowJsonEncrypt = $this->allow_json_encrypt;
 
         try {
-            $token = json_decode($allowJsonEncrypt ? decrypt($this->disk->get($file)) : $this->disk->get($file), true);
+            $token = json_decode($allowJsonEncrypt ?
+                decrypt($this->disk->get($file)) :
+                $this->disk->get($file), true);
         } catch (FileNotFoundException $e) {
             $token = [];
         }
@@ -86,8 +88,7 @@ class TokenDiskStorage implements TokenStorage
         $allowJsonEncrypt = $this->allow_json_encrypt;
 
         $allowJsonEncrypt ?
-            $this->disk->put($file, encrypt(json_encode($token)))
-            :
+            $this->disk->put($file, encrypt(json_encode($token))) :
             $this->disk->put($file, json_encode($token));
     }
 
@@ -99,6 +100,6 @@ class TokenDiskStorage implements TokenStorage
 
     private function getFileName()
     {
-        return $this->credentials_file_name;
+        return $this->user;
     }
 }

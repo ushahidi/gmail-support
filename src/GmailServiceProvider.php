@@ -13,6 +13,18 @@ class GmailServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Main Service
+        $this->app->bind('gmail', function ($app) {
+            $gmail = new Gmail($app['config']);
+            $gmail->setStorage($this->app->make(TokenDiskStorage::class));
+
+            return $gmail;
+        });
+
+        $this->app->bind(Gmail::class, function ($app) {
+            return $app->make('gmail');
+        });
+
         $this->registerGmailSource();
 
         $this->registerGmailTransport();
@@ -46,9 +58,7 @@ class GmailServiceProvider extends ServiceProvider
         }
 
         $this->resolveTransportManager()->extend('gmail', function () {
-            return new GmailTransport(
-                config('gmail.secret', config('services.gmail.secret'))
-            );
+            return new GmailTransport;
         });
     }
 

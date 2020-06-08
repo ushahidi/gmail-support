@@ -6,6 +6,7 @@ use Exception;
 use Google_Client;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Profile;
+use Ushahidi\Gmail\Contracts\TokenStorage;
 
 class GmailConnector extends Google_Client
 {
@@ -19,9 +20,11 @@ class GmailConnector extends Google_Client
 
     public function __construct($config = null, $user = null)
     {
+        $this->configuration = $config;
+
         $this->user = $user;
 
-        $this->configuration = $config = $this->getGmailConfig($config);
+        $config = $this->getGmailConfig();
 
         parent::__construct($config);
 
@@ -31,20 +34,20 @@ class GmailConnector extends Google_Client
 
         $this->setScopes(Google_Service_Gmail::MAIL_GOOGLE_COM);
 
-        if ($this->hasToken()) {
+        if ($user && $this->hasToken()) {
             $this->refreshTokenIfNeeded();
         }
     }
 
-    public function getGmailConfig($config)
+    public function getGmailConfig()
     {
         return [
-            'access_type' => $config['services.gmail.access_type'] ?? 'offline',
-            'approval_prompt' => $config['services.gmail.approval_prompt'] ?? 'select_account consent',
-            'client_secret' => $config['services.gmail.client_secret'],
-            'client_id' => $config['services.gmail.client_id'],
-            'redirect_uri' => $config['services.gmail.redirect_url'],
-            'state' => $config['services.gmail.state'] ?? null,
+            'access_type' => $this->configuration['services.gmail.access_type'] ?? 'offline',
+            'approval_prompt' => $this->configuration['services.gmail.approval_prompt'] ?? 'select_account consent',
+            'client_secret' => $this->configuration['services.gmail.client_secret'],
+            'client_id' => $this->configuration['services.gmail.client_id'],
+            'redirect_uri' => $this->configuration['services.gmail.redirect_url'],
+            'state' => $this->configuration['services.gmail.state'] ?? null,
         ];
     }
 
@@ -53,7 +56,7 @@ class GmailConnector extends Google_Client
      */
     public function getAccessToken()
     {
-        return parent::getAccessToken() ?: $this->token();
+        return parent::getAccessToken() ?: $this->getToken();
     }
 
     /**
@@ -63,14 +66,6 @@ class GmailConnector extends Google_Client
     {
         $this->setAccessToken($token);
         $this->saveAccessToken($token);
-    }
-
-    /**
-     * Delete the credentials in a file
-     */
-    public function deleteAccessToken()
-    {
-        $this->storage->delete();
     }
 
     /**
@@ -86,6 +81,14 @@ class GmailConnector extends Google_Client
     }
 
     /**
+     * Delete the credentials in a file
+     */
+    public function deleteAccessToken()
+    {
+        $this->storage->delete();
+    }
+
+    /**
      * Check if token exists and is expired
      * Throws an AuthException when the auth file its empty or with the wrong token
      *
@@ -96,14 +99,14 @@ class GmailConnector extends Google_Client
         $token = $this->getAccessToken();
 
         if ($token) {
-            $this->setAccessToken($token);
+            $this->setToken($token);
         }
 
         return parent::isAccessTokenExpired();
     }
 
     /**
-     * Check and return true if the connected user already has a saved token
+     * Check and return true if the connection already has a saved token
      *
      * @return bool
      */
@@ -187,11 +190,15 @@ class GmailConnector extends Google_Client
         $this->user = $user;
         return $this;
     }
-    
-    public function setStorage($storage)
+
+    /**
+     * @param TokenStorage $storage
+     * @return GmailConnector
+     */
+    public function setStorage(TokenStorage $storage)
     {
         $this->storage = $storage;
-        return $storage;
+        return $this;
     }
 
     /**
