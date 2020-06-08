@@ -39,7 +39,10 @@
         "laravel": {
             "providers": [
                 "Ushahidi\\Gmail\\GmailServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Gmail": "Ushahidi\\Gmail\\Facades\\Gmail"
+            }
         }
     },
     "minimum-stability": "dev",
