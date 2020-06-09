@@ -168,7 +168,7 @@ class GmailConnector extends Google_Client
      */
     public function getProfile()
     {
-        return $this->service->users->getProfile('me');
+        return $this->getService()->users->getProfile('me');
     }
 
     /**
@@ -191,6 +191,11 @@ class GmailConnector extends Google_Client
         return $this;
     }
 
+    public function getStorage()
+    {
+        return $this->storage;
+    }
+
     /**
      * @param TokenStorage $storage
      * @return GmailConnector
@@ -209,11 +214,15 @@ class GmailConnector extends Google_Client
     private function refreshTokenIfNeeded()
     {
         if ($this->isAccessTokenExpired()) {
-            $this->fetchAccessTokenWithRefreshToken($this->getRefreshToken());
-            $token = $this->getAccessToken();
-            $this->addAccessToken($token);
+            if ($refreshToken = $this->getRefreshToken()) {
+                $this->fetchAccessTokenWithRefreshToken($refreshToken);
+                $token = $this->getAccessToken();
+                $this->addAccessToken($token);
 
-            return $token;
+                return $token;
+            }
+            // Dispatch an Event stating that the user that token has expired and
+            // can't be refreshed. This way Listeners can be registered to Event
         }
 
         return $this->getAccessToken();

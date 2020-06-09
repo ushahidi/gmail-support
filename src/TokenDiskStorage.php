@@ -2,9 +2,9 @@
 
 namespace Ushahidi\Gmail;
 
+use Ushahidi\Gmail\Contracts\TokenStorage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use Ushahidi\Gmail\Contracts\TokenStorage;
 
 class TokenDiskStorage implements TokenStorage
 {
