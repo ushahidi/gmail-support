@@ -77,7 +77,7 @@ class GmailConnector extends Google_Client
     {
         $token['email'] = $this->user;
 
-        $this->storage->save($token);
+        $this->storage->save($this->user, $token);
     }
 
     /**
@@ -85,7 +85,7 @@ class GmailConnector extends Google_Client
      */
     public function deleteAccessToken()
     {
-        $this->storage->delete();
+        $this->storage->delete($this->user);
     }
 
     /**
@@ -123,7 +123,7 @@ class GmailConnector extends Google_Client
      */
     public function getToken($key = null)
     {
-        return $this->storage->get($key);
+        return $this->storage->get($this->user, $key);
     }
 
     /**

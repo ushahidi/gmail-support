@@ -2,21 +2,13 @@
 
 namespace Ushahidi\Gmail;
 
-use Ushahidi\Gmail\Concerns\Mail;
-use Ushahidi\Gmail\Concerns\Mailbox;
+use Exception;
+use Ushahidi\Gmail\Services\Mail;
+use Ushahidi\Gmail\Services\Mailbox;
 
 class Gmail extends GmailConnector
 {
-    use Mail, Mailbox;
-
     public $user;
-
-    /**
-     * Optional parameter for getting single and multiple emails
-     *
-     * @var array
-     */
-    protected $params = [];
 
     /**
      * Gmail constructor.
@@ -32,9 +24,18 @@ class Gmail extends GmailConnector
         parent::__construct($config, $user);
     }
     
-    public function getUser()
+    public function user()
     {
         return $this->getProfile();
+    }
+
+    public function mailbox($params = [])
+    {
+        if (!$this->check()) {
+            throw new Exception('No token credentials found.');
+        }
+
+        return new Mailbox($this, $params);
     }
 
     /**
@@ -42,8 +43,24 @@ class Gmail extends GmailConnector
      *
      * @return string
      */
-    public function getAuthUrl()
+    public function login()
     {
         return $this->createAuthUrl();
+    }
+
+    public function logout()
+    {
+        $this->revokeToken();
+        $this->deleteAccessToken();
+    }
+
+    /**
+     * Check
+     *
+     * @return bool
+     */
+    public function check()
+    {
+        return !$this->isAccessTokenExpired();
     }
 }

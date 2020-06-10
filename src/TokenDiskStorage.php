@@ -19,9 +19,9 @@ class TokenDiskStorage implements TokenStorage
         $this->disk = Storage::disk('local');
     }
 
-    public function get($string = null)
+    public function get($email, $string = null)
     {
-        $file = $this->getFile();
+        $file = $this->getFile($email);
 
         if ($this->disk->exists($file)) {
             $token = $this->getTokenFromFile($file);
@@ -38,9 +38,9 @@ class TokenDiskStorage implements TokenStorage
         return null;
     }
 
-    public function save($token)
+    public function save($email, $token)
     {
-        $file = $this->getFile();
+        $file = $this->getFile($email);
 
         if ($this->disk->exists($file)) {
             if (empty($token['email'])) {
@@ -57,9 +57,9 @@ class TokenDiskStorage implements TokenStorage
         $this->saveTokenToFile($token, $file);
     }
 
-    public function delete()
+    public function delete($email)
     {
-        $file = $this->getFile();
+        $file = $this->getFile($email);
 
         if ($this->disk->exists($file)) {
             $this->disk->delete($file);
@@ -92,14 +92,9 @@ class TokenDiskStorage implements TokenStorage
             $this->disk->put($file, json_encode($token));
     }
 
-    private function getFile()
+    private function getFile($email)
     {
-        $fileName = $this->getFileName();
+        $fileName = "token_for_$email";
         return "gmail/tokens/$fileName.json";
-    }
-
-    private function getFileName()
-    {
-        return $this->user;
     }
 }

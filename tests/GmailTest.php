@@ -3,9 +3,8 @@
 namespace Ushahidi\Gmail\Tests;
 
 use Mockery as M;
-use Ushahidi\Gmail\Contracts\TokenStorage;
 use Ushahidi\Gmail\Gmail;
-use Ushahidi\Gmail\TokenDiskStorage;
+use Ushahidi\Gmail\Contracts\TokenStorage;
 
 class GmailTest extends TestCase
 {
@@ -19,8 +18,6 @@ class GmailTest extends TestCase
 
         $app['config']->set('services.gmail', $config);
     }
-
-
 
     public function testGmailTokenStorage()
     {
@@ -64,7 +61,7 @@ class GmailTest extends TestCase
 
         $gmail->shouldReceive('getProfile')
             ->andReturn([
-                'emailAddress' => 'user@test.app'
+                'emailAddress' => 'test@gmail.com'
             ]);
 
         $gmail->makeToken('test_auth_token');

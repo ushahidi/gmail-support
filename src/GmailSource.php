@@ -41,7 +41,9 @@ class GmailSource implements IncomingAPIDataSource
      */
     public function fetch($limit = false)
     {
+        $mailbox = app('gmail')->mailbox();
 
+        $mailbox->all();
     }
 
     /**

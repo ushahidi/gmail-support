@@ -1,38 +1,62 @@
 <?php
 
-namespace Ushahidi\Gmail\Concerns;
+namespace Ushahidi\Gmail\Services;
 
-trait Mailbox
+use Ushahidi\Gmail\Gmail;
+
+class Mailbox
 {
-        /**
-     * Returns a collection of Mail instances
+    protected $service;
+
+    /**
+     * Optional parameter for getting single and multiple emails
+     *
+     * @var array
+     */
+    protected $params = [];
+
+
+    public function __construct(Gmail $client, $params = [])
+    {
+        $this->service = $client->getService();
+        $this->params = $params;
+    }
+
+    /**
+     * Returns a collection of messages
      *
      * @param null|string $pageToken
      *
      * @return \Illuminate\Support\Collection
-     * @throws \Google_Exception
      */
     public function all($pageToken = null)
     {
         $mailbox = $this->listMessages();
-        $this->pageToken = method_exists($response, 'getNextPageToken') ? $mailbox->getNextPageToken() : null;
+       // $this->pageToken = method_exists($response, 'getNextPageToken') ? $mailbox->getNextPageToken() : null;
 
-        $getMessages = $mailbox->getMessages();
+        $messages = $mailbox->getMessages();
 
-        foreach ($allMessages as $message) {
-            $messages[] = new Mail($message, $this->preload);
-        }
+        return new MessageCollection($messages);
+    }
+
+    /**
+     * @param $id
+     *
+     * @return Mail
+     */
+    public function get($id)
+    {
+        $message = $this->getRequest($id);
+
+        return new Message($message);
     }
 
     /**
      * @return \Google_Service_Gmail_ListMessagesResponse|object
-     * @throws \Google_Exception
      */
     private function listMessages()
     {
-        $response = $this->service->users_messages->listUsersMessages('me', $this->params);
-
-        return $response;
+        return $this->service->users_messages->listUsersMessages('me', $this->params);
     }
 
     /**
