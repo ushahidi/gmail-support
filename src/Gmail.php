@@ -3,7 +3,7 @@
 namespace Ushahidi\Gmail;
 
 use Exception;
-use Ushahidi\Gmail\Services\Mail;
+use Ushahidi\Gmail\Services\Mailer;
 use Ushahidi\Gmail\Services\Mailbox;
 
 class Gmail extends GmailConnector

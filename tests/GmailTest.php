@@ -3,8 +3,10 @@
 namespace Ushahidi\Gmail\Tests;
 
 use Mockery as M;
+use Illuminate\Container\Container;
 use Ushahidi\Gmail\Gmail;
 use Ushahidi\Gmail\Contracts\TokenStorage;
+use Ushahidi\Gmail\TokenDiskStorage;
 
 class GmailTest extends TestCase
 {
@@ -44,12 +46,19 @@ class GmailTest extends TestCase
         $this->assertEquals($token, $gmail->getAccessToken());
     }
 
-    public function testmakeToken()
+    public function testMakeToken()
     {
-        $gmail = $this->app->make(Gmail::class);
-        $gmail = M::mock($gmail);
+        $mockGmail = M::mock(Gmail::class);
 
-        $gmail->shouldReceive('fetchAccessTokenWithAuthCode')
+        app()->bind('gmail', function() use ($mockGmail) {
+           return $mockGmail;
+        });
+
+        $mockGmail->shouldReceive('storage')
+            ->once()
+            ->andReturn(app(TokenDiskStorage::class));
+
+        $mockGmail->shouldReceive('fetchAccessTokenWithAuthCode')
             ->andReturn([
                 "access_token" => "ya29.a0AfH62niBTQPMJVN8586Y2C7Vh3tvy28wCrvlOaIsDJid8J6MX09ZD-ODTHnBRNkxgklFvAH787Wd7TxBIRAV--ZZq_Y7jgsFrG5AwI_2vfqmGlZ-gSGwL3bpUnIsB3DbQy3AvUH2THCu3xwyEKEtJL2eGwKaDPzSRB",
                 "expires_in" => 3599,
@@ -59,11 +68,13 @@ class GmailTest extends TestCase
                 "created" => 1589303472
             ]);
 
-        $gmail->shouldReceive('getProfile')
+        $mockGmail->shouldReceive('getProfile')
             ->andReturn([
                 'emailAddress' => 'test@gmail.com'
             ]);
 
+        $gmail = $this->app->make('gmail');
+        
         $gmail->makeToken('test_auth_token');
 
         $this->assertTrue($gmail->hasToken());

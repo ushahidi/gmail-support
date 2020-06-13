@@ -2,7 +2,7 @@
 
 namespace Ushahidi\Gmail\Services;
 
-trait Mail
+class Mailer
 {
 
 }

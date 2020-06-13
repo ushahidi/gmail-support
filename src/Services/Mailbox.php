@@ -31,32 +31,24 @@ class Mailbox
      */
     public function all($pageToken = null)
     {
-        $mailbox = $this->listMessages();
-       // $this->pageToken = method_exists($response, 'getNextPageToken') ? $mailbox->getNextPageToken() : null;
+        $mailbox = $this->getMessages();
+        $this->pageToken = method_exists($response, 'getNextPageToken') ? $mailbox->getNextPageToken() : null;
 
         $messages = $mailbox->getMessages();
 
-        return new MessageCollection($messages);
+        return $messages;
     }
 
     /**
      * @param $id
      *
-     * @return Mail
+     * @return Mailer
      */
     public function get($id)
     {
-        $message = $this->getRequest($id);
+        $message = $this->getMessage($id);
 
         return new Message($message);
-    }
-
-    /**
-     * @return \Google_Service_Gmail_ListMessagesResponse|object
-     */
-    private function listMessages()
-    {
-        return $this->service->users_messages->listUsersMessages('me', $this->params);
     }
 
     /**
@@ -68,4 +60,13 @@ class Mailbox
     {
         return $this->service->users_messages->get('me', $id);
     }
+
+    /**
+     * @return \Google_Service_Gmail_ListMessagesResponse|object
+     */
+    private function getMessages()
+    {
+        return $this->service->users_messages->listUsersMessages('me', $this->params);
+    }
+
 }
