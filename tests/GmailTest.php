@@ -21,7 +21,7 @@ class GmailTest extends TestCase
         $app['config']->set('services.gmail', $config);
     }
 
-    public function testGmailTokenStorage()
+    public function testTokenStorage()
     {
       $gmail = $this->app->make('gmail');
 
@@ -46,7 +46,7 @@ class GmailTest extends TestCase
         $this->assertEquals($token, $gmail->getAccessToken());
     }
 
-    public function testMakeToken()
+    public function testAuthentication()
     {
         $mockGmail = M::mock(Gmail::class);
 
@@ -75,7 +75,7 @@ class GmailTest extends TestCase
 
         $gmail = $this->app->make('gmail');
         
-        $gmail->makeToken('test_auth_token');
+        $gmail->authenticate('test_auth_token');
 
         $this->assertTrue($gmail->hasToken());
 

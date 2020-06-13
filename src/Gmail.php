@@ -6,7 +6,7 @@ use Exception;
 use Ushahidi\Gmail\Services\Mailer;
 use Ushahidi\Gmail\Services\Mailbox;
 
-class Gmail extends GmailConnector
+class Gmail extends GmailClient
 {
     public $user;
 
@@ -38,13 +38,20 @@ class Gmail extends GmailConnector
         return new Mailbox($this, $params);
     }
 
+    public function mailer()
+    {
+        // Create magic here...
+    }
+
     /**
      * Gets the URL to authorize the user
      *
+     * @param null $email
      * @return string
      */
-    public function login()
+    public function login($email = null)
     {
+        $this->setLoginHint($email ?? $this->user);
         return $this->createAuthUrl();
     }
 

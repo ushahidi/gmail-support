@@ -8,11 +8,9 @@ use Google_Service_Gmail;
 use Google_Service_Gmail_Profile;
 use Ushahidi\Gmail\Contracts\TokenStorage;
 
-class GmailConnector extends Google_Client
+class GmailClient extends Google_Client
 {
     public $user;
-
-    public $service;
 
     protected $configuration;
 
@@ -47,7 +45,7 @@ class GmailConnector extends Google_Client
             'client_secret' => $this->configuration['services.gmail.client_secret'],
             'client_id' => $this->configuration['services.gmail.client_id'],
             'redirect_uri' => $this->configuration['services.gmail.redirect_url'],
-            'state' => $this->configuration['services.gmail.state'] ?? null,
+            'state' => $this->configuration['services.gmail.state'],
         ];
     }
 
@@ -75,9 +73,9 @@ class GmailConnector extends Google_Client
      */
     public function saveAccessToken(array $token)
     {
-        $token['email'] = $this->user;
+        $token['email'] = $token['email'] ?: $this->user;
 
-        $this->storage->save($this->user, $token);
+        $this->storage->save($token);
     }
 
     /**
@@ -139,26 +137,22 @@ class GmailConnector extends Google_Client
      * @return array|string
      * @throws Exception
      */
-    public function makeToken($code)
+    public function authenticate($code)
     {
         if (!$this->isAccessTokenExpired()) {
             return $this->getAccessToken();
         }
 
-        if (!is_null($code) && !empty($code)) {
-            $accessToken = $this->fetchAccessTokenWithAuthCode($code);
-            $me = $this->getProfile();
-            if (property_exists($me, 'emailAddress')) {
-                $this->user = $me->emailAddress;
-                $accessToken['email'] = $me->emailAddress;
-            }
-
-            $this->addAccessToken($accessToken);
-
-            return $accessToken;
-        } else {
-            throw new Exception('No access token');
+        $token = $this->fetchAccessTokenWithAuthCode($code);
+        $me = $this->getProfile();
+        if (property_exists($me, 'emailAddress')) {
+            $this->user = $me->emailAddress;
+            $token['email'] = $me->emailAddress;
         }
+
+        $this->addAccessToken($token);
+
+        return $token;
     }
 
     /**
@@ -168,22 +162,14 @@ class GmailConnector extends Google_Client
      */
     public function getProfile()
     {
-        return $this->getService()->users->getProfile('me');
-    }
-
-    /**
-     * @return Google_Service_Gmail
-     */
-    public function getService()
-    {
-        return $this->service = new Google_Service_Gmail($this);
+        return (new Google_Service_Gmail($this))->users->getProfile('me');
     }
 
     /**
      * Updates / sets the current user for the service
      *
      * @param $user
-     * @return GmailConnector
+     * @return GmailClient
      */
     public function setUser($user)
     {
@@ -198,7 +184,7 @@ class GmailConnector extends Google_Client
 
     /**
      * @param TokenStorage $storage
-     * @return GmailConnector
+     * @return GmailClient
      */
     public function setStorage(TokenStorage $storage)
     {
