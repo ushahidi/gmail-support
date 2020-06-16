@@ -2,11 +2,14 @@
 
 namespace Ushahidi\Gmail\Services;
 
+use Google_Service_Gmail;
 use Ushahidi\Gmail\Gmail;
 
 class Mailbox
 {
     protected $service;
+
+    protected $pageToken;
 
     /**
      * Optional parameter for getting single and multiple emails
@@ -18,7 +21,7 @@ class Mailbox
 
     public function __construct(Gmail $client, $params = [])
     {
-        $this->service = $client->getService();
+        $this->service = new Google_Service_Gmail($client);
         $this->params = $params;
     }
 
@@ -42,7 +45,7 @@ class Mailbox
     /**
      * @param $id
      *
-     * @return Mailer
+     * @return Message
      */
     public function get($id)
     {
@@ -68,5 +71,4 @@ class Mailbox
     {
         return $this->service->users_messages->listUsersMessages('me', $this->params);
     }
-
 }

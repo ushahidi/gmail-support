@@ -10,17 +10,6 @@ use Ushahidi\Gmail\TokenDiskStorage;
 
 class GmailTest extends TestCase
 {
-    protected function getEnvironmentSetUp($app)
-    {
-        $config = [
-            'client_id' => '',
-            'client_secret' => '',
-            'redirect_uri' => '',
-        ];
-
-        $app['config']->set('services.gmail', $config);
-    }
-
     public function testTokenStorage()
     {
       $gmail = $this->app->make('gmail');

@@ -4,7 +4,7 @@ namespace Ushahidi\Gmail\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class Gmail
+class Gmail extends Facade
 {
     protected static function getFacadeAccessor()
     {

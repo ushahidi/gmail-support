@@ -7,17 +7,17 @@ use Illuminate\Support\ServiceProvider;
 class GmailServiceProvider extends ServiceProvider
 {
     /**
-     * Boot the service provider.
+     * Register the service provider.
      *
      * @return void
      */
-    public function boot()
+    public function register()
     {
         // Main Service
         $this->app->bind('gmail', function ($app) {
-            $gmail = new Gmail($app['config']);
+            $config = $app['config']['services.gmail'];
+            $gmail = new Gmail($config);
             $gmail->setStorage($this->app->make(TokenDiskStorage::class));
-
             return $gmail;
         });
 
@@ -28,6 +28,8 @@ class GmailServiceProvider extends ServiceProvider
         $this->registerGmailSource();
 
         $this->registerGmailTransport();
+
+        $this->registerCommands();
     }
 
     /**
@@ -102,5 +104,12 @@ class GmailServiceProvider extends ServiceProvider
         }
 
         return $this->app['config']['mail.driver'] === 'gmail';
+    }
+
+    public function registerCommands()
+    {
+        $this->commands([
+            Console\AuthCommand::class,
+        ]);
     }
 }

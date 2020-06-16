@@ -22,7 +22,12 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        // perform environment setup
-    }
+        $config = [
+            'client_id' => 'abcdefgh',
+            'client_secret' => 'ijklmnopqrstuvwxyz',
+            'redirect_uri' => 'urn:ietf:wg:oauth:2.0:oob',
+        ];
 
+        $app['config']->set('services.gmail', $config);
+    }
 }

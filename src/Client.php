@@ -2,51 +2,52 @@
 
 namespace Ushahidi\Gmail;
 
-use Exception;
 use Google_Client;
-use Google_Service_Gmail;
-use Google_Service_Gmail_Profile;
 use Ushahidi\Gmail\Contracts\TokenStorage;
 
-class GmailClient extends Google_Client
+class Client extends Google_Client
 {
     public $user;
 
-    protected $configuration;
-
     protected $storage;
 
-    public function __construct($config = null, $user = null)
+    /**
+     * GmailClient constructor.
+     * @param array $config
+     * @param null $user
+     */
+    public function __construct($config = [], $user = null)
     {
-        $this->configuration = $config;
-
         $this->user = $user;
 
-        $config = $this->getGmailConfig();
+        parent::__construct();
 
-        parent::__construct($config);
+        $this->setClientId(optional($config)['client_id']);
 
-        $this->setAccessType($config['access_type']);
+        $this->setClientSecret(optional($config)['client_secret']);
 
-        $this->setApprovalPrompt($config['approval_prompt']);
-
-        $this->setScopes(Google_Service_Gmail::MAIL_GOOGLE_COM);
+        $this->setRedirectUri(optional($config)['redirect_uri']);
 
         if ($user && $this->hasToken()) {
             $this->refreshTokenIfNeeded();
         }
     }
 
-    public function getGmailConfig()
+    /**
+     * Check if token exists and is expired
+     * Throws an AuthException when the auth file its empty or with the wrong token
+     *
+     * @return bool Returns True if the access_token is expired.
+     */
+    public function isAccessTokenExpired()
     {
-        return [
-            'access_type' => $this->configuration['services.gmail.access_type'] ?? 'offline',
-            'approval_prompt' => $this->configuration['services.gmail.approval_prompt'] ?? 'select_account consent',
-            'client_secret' => $this->configuration['services.gmail.client_secret'],
-            'client_id' => $this->configuration['services.gmail.client_id'],
-            'redirect_uri' => $this->configuration['services.gmail.redirect_url'],
-            'state' => $this->configuration['services.gmail.state'],
-        ];
+        $token = $this->getAccessToken();
+
+        if ($token) {
+            $this->setAccessToken($token);
+        }
+
+        return parent::isAccessTokenExpired();
     }
 
     /**
@@ -73,9 +74,9 @@ class GmailClient extends Google_Client
      */
     public function saveAccessToken(array $token)
     {
-        $token['email'] = $token['email'] ?: $this->user;
+        $token['email'] = isset($token['email']) ? $token['email'] : $this->user;
 
-        $this->storage->save($token);
+        $this->storage->save($token['email'], $token);
     }
 
     /**
@@ -84,23 +85,6 @@ class GmailClient extends Google_Client
     public function deleteAccessToken()
     {
         $this->storage->delete($this->user);
-    }
-
-    /**
-     * Check if token exists and is expired
-     * Throws an AuthException when the auth file its empty or with the wrong token
-     *
-     * @return bool Returns True if the access_token is expired.
-     */
-    public function isAccessTokenExpired()
-    {
-        $token = $this->getAccessToken();
-
-        if ($token) {
-            $this->setToken($token);
-        }
-
-        return parent::isAccessTokenExpired();
     }
 
     /**
@@ -133,43 +117,10 @@ class GmailClient extends Google_Client
     }
 
     /**
-     * @param $code
-     * @return array|string
-     * @throws Exception
-     */
-    public function authenticate($code)
-    {
-        if (!$this->isAccessTokenExpired()) {
-            return $this->getAccessToken();
-        }
-
-        $token = $this->fetchAccessTokenWithAuthCode($code);
-        $me = $this->getProfile();
-        if (property_exists($me, 'emailAddress')) {
-            $this->user = $me->emailAddress;
-            $token['email'] = $me->emailAddress;
-        }
-
-        $this->addAccessToken($token);
-
-        return $token;
-    }
-
-    /**
-     * Gets user profile from Gmail
-     *
-     * @return Google_Service_Gmail_Profile
-     */
-    public function getProfile()
-    {
-        return (new Google_Service_Gmail($this))->users->getProfile('me');
-    }
-
-    /**
      * Updates / sets the current user for the service
      *
      * @param $user
-     * @return GmailClient
+     * @return Client
      */
     public function setUser($user)
     {
@@ -177,6 +128,9 @@ class GmailClient extends Google_Client
         return $this;
     }
 
+    /**
+     * @return TokenStorage
+     */
     public function getStorage()
     {
         return $this->storage;
@@ -184,7 +138,7 @@ class GmailClient extends Google_Client
 
     /**
      * @param TokenStorage $storage
-     * @return GmailClient
+     * @return Client
      */
     public function setStorage(TokenStorage $storage)
     {
@@ -197,7 +151,7 @@ class GmailClient extends Google_Client
      *
      * @return mixed|null
      */
-    private function refreshTokenIfNeeded()
+    protected function refreshTokenIfNeeded()
     {
         if ($this->isAccessTokenExpired()) {
             if ($refreshToken = $this->getRefreshToken()) {
