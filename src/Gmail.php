@@ -5,7 +5,6 @@ namespace Ushahidi\Gmail;
 use Exception;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Profile;
-use Ushahidi\Gmail\Services\Mailer;
 use Ushahidi\Gmail\Services\Mailbox;
 
 class Gmail extends Client
@@ -34,15 +33,6 @@ class Gmail extends Client
         }
 
         return new Mailbox($this, $params);
-    }
-
-    public function mailer($params = [])
-    {
-        if (!$this->check()) {
-            throw new Exception('No token credentials found.');
-        }
-
-        return new Mailer($this, $params);
     }
 
     /**
@@ -112,8 +102,6 @@ class Gmail extends Client
      */
     public function check()
     {
-        $this->refreshTokenIfNeeded();
-
         return $this->hasToken();
     }
 }

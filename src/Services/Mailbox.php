@@ -3,13 +3,16 @@
 namespace Ushahidi\Gmail\Services;
 
 use Google_Service_Gmail;
+use Google_Service_Gmail_Message;
 use Ushahidi\Gmail\Gmail;
 
 class Mailbox
 {
-    protected $service;
+    public $client;
 
-    protected $pageToken;
+    public $service;
+
+    public $pageToken;
 
     /**
      * Optional parameter for getting single and multiple emails
@@ -21,8 +24,9 @@ class Mailbox
 
     public function __construct(Gmail $client, $params = [])
     {
-        $this->service = new Google_Service_Gmail($client);
+        $this->client = $client;
         $this->params = $params;
+        $this->service = new Google_Service_Gmail($client);
     }
 
     /**
@@ -34,41 +38,76 @@ class Mailbox
      */
     public function all($pageToken = null)
     {
-        $mailbox = $this->getMessages();
-        $this->pageToken = method_exists($response, 'getNextPageToken') ? $mailbox->getNextPageToken() : null;
+        isset($pageToken) ?: $this->page($pageToken);
 
-        $messages = $mailbox->getMessages();
+        $list = $this->service->users_messages->listUsersMessages('me', $this->params);
+        $this->pageToken = method_exists($list, 'getNextPageToken') ? $list->getNextPageToken() : null;
 
-        return $messages;
+        return $this->getMessages($list);
     }
 
     /**
-     * @param $id
-     *
+     * @param $message
      * @return Message
      */
-    public function get($id)
+    public function get($message)
     {
-        $message = $this->getMessage($id);
+        if ($message instanceof Google_Service_Gmail_Message) {
+            $message = $message->getId();
+        }
+
+        $message = $this->service->users_messages->get('me', $message);
 
         return new Message($message);
     }
 
     /**
-     * @param $id
+     * Returns next page if available of messages or an empty collection
      *
-     * @return \Google_Service_Gmail_Message
+     * @return \Illuminate\Support\Collection
+     * @throws \Google_Exception
      */
-    private function getMessage($id)
+    public function next()
     {
-        return $this->service->users_messages->get('me', $id);
+        if ($this->pageToken) {
+            return $this->all($this->pageToken);
+        } else {
+            return collect([]);
+        }
     }
 
     /**
-     * @return \Google_Service_Gmail_ListMessagesResponse|object
-     */
-    private function getMessages()
+	 * Specify the maximum number of messages to return
+	 *
+	 * @param  int  $number
+	 *
+	 * @return Mailbox
+	 */
+	public function take($number)
+	{
+		$this->params['maxResults'] = abs((int) $number);
+
+		return $this;
+    }
+
+    /**
+	 * Set the page token to retrieve a specific page of results in the list.
+	 *
+	 * @param  string  $token
+	 *
+	 * @return Mailbox
+	 */
+    public function page($token)
+	{
+		$this->params['pageToken'] = $token;
+
+		return $this;
+	}
+
+    protected function getMessages($list)
     {
-        return $this->service->users_messages->listUsersMessages('me', $this->params);
+        return collect($list->getMessages())->map(function ($message) {
+            return $this->get($message);
+        });
     }
 }

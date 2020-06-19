@@ -18,9 +18,9 @@ class Client extends Google_Client
      */
     public function __construct($config = [], $user = null)
     {
-        $this->user = $user;
-
         parent::__construct();
+
+        $this->user = $user;
 
         $this->setClientId(optional($config)['client_id']);
 
@@ -28,7 +28,7 @@ class Client extends Google_Client
 
         $this->setRedirectUri(optional($config)['redirect_uri']);
 
-        if ($user && $this->hasToken()) {
+        if ($user) {
             $this->refreshTokenIfNeeded();
         }
     }
@@ -94,9 +94,9 @@ class Client extends Google_Client
      */
     public function hasToken()
     {
-        $config = $this->getToken();
+        $token = $this->refreshTokenIfNeeded();
 
-        return !empty($config['access_token']);
+        return !empty($token['access_token']);
     }
 
     /**
