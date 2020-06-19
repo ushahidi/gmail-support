@@ -113,6 +113,11 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         return $messages;
     }
 
+    public function send($to, $message, $title = '')
+    {
+        
+    }
+
     /**
      * Sanitize the BODY text string
      *
