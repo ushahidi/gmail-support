@@ -2,10 +2,7 @@
 
 namespace Ushahidi\Gmail;
 
-use Google_Service_Gmail;
-use Google_Service_Gmail_Message;
 use Swift_Mime_SimpleMessage;
-use Swift_Mime_ContentEncoder_Base64ContentEncoder;
 use Illuminate\Mail\Transport\Transport;
 
 class GmailTransport extends Transport
@@ -14,7 +11,7 @@ class GmailTransport extends Transport
 
     public function __construct(Gmail $client)
     {
-        $this->gmail = new Google_Service_Gmail($client);
+        $this->gmail = $client;
     }
 
     /**
@@ -26,12 +23,9 @@ class GmailTransport extends Transport
     {
         $this->beforeSendPerformed($message);
 
-        $rawMessage = (new Swift_Mime_ContentEncoder_Base64ContentEncoder())
-            ->encodeString($message->toString());
-
-        $gmailMessage = new Google_Service_Gmail_Message;
-        $gmailMessage->setRaw($rawMessage);
-        $this->gmail->users_messages->send("me", $gmailMessage);
+        $mailer = $this->gmail->mailer();
+        
+        $mailer->setMessage($message)->send();
 
         return $this->numberOfRecipients($message);
     }

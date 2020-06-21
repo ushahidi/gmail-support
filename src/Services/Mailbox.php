@@ -2,9 +2,9 @@
 
 namespace Ushahidi\Gmail\Services;
 
+use Google_Client;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Message;
-use Ushahidi\Gmail\Gmail;
 
 class Mailbox
 {
@@ -22,7 +22,7 @@ class Mailbox
     protected $params = [];
 
 
-    public function __construct(Gmail $client, $params = [])
+    public function __construct(Google_Client $client, $params = [])
     {
         $this->client = $client;
         $this->params = $params;
@@ -38,7 +38,7 @@ class Mailbox
      */
     public function all($pageToken = null)
     {
-        isset($pageToken) ?: $this->page($pageToken);
+        if(isset($pageToken)) $this->page($pageToken);
 
         $list = $this->service->users_messages->listUsersMessages('me', $this->params);
         $this->pageToken = method_exists($list, 'getNextPageToken') ? $list->getNextPageToken() : null;

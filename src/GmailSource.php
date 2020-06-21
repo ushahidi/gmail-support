@@ -2,11 +2,13 @@
 
 namespace Ushahidi\Gmail;
 
+use Exception;
 use Ushahidi\Core\Entity\Contact;
 use Ushahidi\Core\Entity\ConfigRepository;
 use Ushahidi\App\DataSource\IncomingAPIDataSource;
 use Ushahidi\App\DataSource\OutgoingAPIDataSource;
 use Ushahidi\App\DataSource\Concerns\MapsInboundFields;
+use Ushahidi\App\DataSource\Message\Status as MessageStatus;
 use Ushahidi\App\DataSource\Message\Type as MessageType;
 
 class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
@@ -17,7 +19,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     protected $configRepo;
 
-    protected $page_token; // get mails for a page
+    protected $pageToken; // get mails for a page
 
     protected $gmail;
 
@@ -85,8 +87,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $mailbox = $this->gmail->mailbox();
         $mailbox->take(200);
 
-        $mails = $mailbox->all($this->page_token);
-        $this->page_token = $mailbox->pageToken;
+        $mails = $mailbox->all($this->pageToken);
+        $this->pageToken = $mailbox->pageToken;
         $messages = [];
 
         $messages = $mails->map(function($mail) {
@@ -115,7 +117,22 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     public function send($to, $message, $title = '')
     {
-        
+        $from = $this->config['user'];
+
+        $this->gmail->setUser($from);
+        $mailer = $this->gmail->mailer();
+        try {
+            $response =  $mailer->createMessage($title, $from, $to, $message)->send();
+            if (!isset($response->id)) {
+                app('log')->error("Twitter: Send failed", ['response' => $response]);
+                return [MessageStatus::FAILED, false];
+            }
+            return [MessageStatus::SENT, $response->id];
+        } catch (Exception $e)
+        {
+            app('log')->error($e->getMessage());
+            return [MessageStatus::FAILED, false];
+        }
     }
 
     /**
@@ -171,6 +188,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         // Store the state in the database config for now
         $gmailConfig = $this->configRepo->get('gmail');
 
+        var_dump($this->pageToken);
+        
         $gmailConfig->setState([
             'next_page_token' => $this->pageToken,
         ]);
