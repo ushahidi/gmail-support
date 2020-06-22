@@ -95,6 +95,6 @@ class TokenDiskStorage implements TokenStorage
     private function getFile($email)
     {
         $fileName = sha1("token_for_$email");
-        return "gmail/$fileName.token";
+        return "gmail/$fileName";
     }
 }
