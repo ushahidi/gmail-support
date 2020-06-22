@@ -22,10 +22,11 @@ class Client extends Google_Client
 
         $this->user = $user;
 
+        $config = optional($config);
         $this->setClientConfig(
-            optional($config['client_id']),
-            optional($config['client_secret']),
-            optional($config['redirect_uri'])
+            $config['client_id'],
+            $config['client_secret'],
+            $config['redirect_uri']
         );
 
         if ($user) {
@@ -33,7 +34,7 @@ class Client extends Google_Client
         }
     }
 
-    public function setClientConfig($client_id = null, $client_secret = null, $redirect_uri = '')
+    public function setClientConfig($client_id, $client_secret, $redirect_uri)
     {
         $this->setClientId($client_id);
 

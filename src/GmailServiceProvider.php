@@ -54,7 +54,9 @@ class GmailServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->router->group([], function($router) {
+        $this->app->router->group([
+            'namespace' => 'Ushahidi\Gmail'
+        ], function($router) {
             require __DIR__.'../../routes/api.php';
         });
     }

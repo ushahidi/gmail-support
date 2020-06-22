@@ -72,9 +72,7 @@ class Gmail extends Client
     {
         $loginHint = ($email ?? $this->user) ?: '';
 
-        if(empty($loginHint)) {
-            $this->setApprovalPrompt('select_account consent');
-        } else {
+        if(!empty($loginHint)) {
             $this->setLoginHint($loginHint);
         }
 
