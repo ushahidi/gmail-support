@@ -219,6 +219,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             ]
         );
 
+        $connection->setStorage(new TokenConfigStorage($this->configRepo));
+
         return $connection;
     }
 }

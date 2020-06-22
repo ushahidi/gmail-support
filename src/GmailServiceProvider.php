@@ -53,6 +53,10 @@ class GmailServiceProvider extends ServiceProvider
                 }
             );
         });
+
+        $this->app->router->group([], function($router) {
+            require __DIR__.'../../routes/api.php';
+        });
     }
 
     /**

@@ -14,7 +14,7 @@ class Client extends Google_Client
     /**
      * GmailClient constructor.
      * @param array $config
-     * @param null $user
+     * @param null|string $user
      */
     public function __construct($config = [], $user = null)
     {
@@ -22,15 +22,26 @@ class Client extends Google_Client
 
         $this->user = $user;
 
-        $this->setClientId(optional($config)['client_id']);
-
-        $this->setClientSecret(optional($config)['client_secret']);
-
-        $this->setRedirectUri(optional($config)['redirect_uri']);
+        $this->setClientConfig(
+            optional($config['client_id']),
+            optional($config['client_secret']),
+            optional($config['redirect_uri'])
+        );
 
         if ($user) {
             $this->refreshTokenIfNeeded();
         }
+    }
+
+    public function setClientConfig($client_id = null, $client_secret = null, $redirect_uri = '')
+    {
+        $this->setClientId($client_id);
+
+        $this->setClientSecret($client_secret);
+
+        $this->setRedirectUri($redirect_uri);
+
+        return $this;
     }
 
     /**

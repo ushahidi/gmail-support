@@ -24,19 +24,14 @@ class AuthCommand extends Command
 
         Gmail::setUser($email);
 
-       if (Gmail::check() && !$this->hasOption('force'))
-       {
-            $this->info('User already authenticated');
-       } else {
-           $authUrl = Gmail::login();
+        $authUrl = Gmail::login();
 
-           $this->info("{$authUrl}");
+        $this->info("{$authUrl}");
 
-           $authCode = $this->ask('Enter Authentication Code');
+        $authCode = $this->ask('Enter Authentication Code');
 
-           Gmail::authenticate($authCode);
+        Gmail::authenticate($authCode);
 
-           $this->info('Authentication Successful');
-       }
+        $this->info('Authentication Successful');
     }
 }

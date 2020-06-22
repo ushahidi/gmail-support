@@ -52,10 +52,6 @@ class Gmail extends Client
      */
     public function authenticate($code)
     {
-        if ($this->check()) {
-            return $this->getAccessToken();
-        }
-
         $token = $this->fetchAccessTokenWithAuthCode($code);
         $me = $this->user();
         if (property_exists($me, 'emailAddress')) {
