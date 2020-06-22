@@ -10,7 +10,7 @@ class AuthCommand extends Command
 {
     protected $name = 'gmail:auth';
 
-    protected $signature = 'gmail:auth {--email=}';
+    protected $signature = 'gmail:auth {--email=} {--force}';
 
     protected $description = 'Gmail Authentication';
 
@@ -24,7 +24,7 @@ class AuthCommand extends Command
 
         Gmail::setUser($email);
 
-       if (Gmail::check())
+       if (Gmail::check() && !$this->hasOption('force'))
        {
             $this->info('User already authenticated');
        } else {
@@ -38,8 +38,5 @@ class AuthCommand extends Command
 
            $this->info('Authentication Successful');
        }
-
-//        $mailbox = Gmail::mailbox();
-//        dd($mailbox->all());
     }
 }
