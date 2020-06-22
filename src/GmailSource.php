@@ -124,7 +124,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             return [MessageStatus::FAILED, false];
         }
         
-        $from = isset($this->config['user']) ? $this->config['user'] : $gmail->getUser();
+        $from = isset($this->config['email']) ? $this->config['email'] : $gmail->getUser();
 
         $mailer = $gmail->mailer();
         try {
@@ -201,7 +201,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     {
         // Check we have the required config
         if (
-            !isset($this->config['user']) ||
+            !isset($this->config['email']) ||
             !isset($this->config['client_id']) ||
             !isset($this->config['client_secret']) ||
             !isset($this->config['redirect_uri'])
@@ -211,7 +211,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         }
 
         $connection = ($this->connectionFactory)(
-            $this->config['user'],
+            $this->config['email'],
             [
                 'client_id' => $this->config['client_id'],
                 'client_secret' => $this->config['client_secret'],

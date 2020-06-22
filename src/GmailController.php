@@ -14,7 +14,7 @@ class GmailController
         $this->configRepo = $configRepo;
         
         $providers = $this->configRepo->get('data-provider')->asArray();
-        $user = isset($providers['gmail']) ? $providers['gmail']['redirect_uri'] : null;
+        $user = isset($providers['gmail']) ? optional($providers['gmail'])['email'] : null;
         $config = isset($providers['gmail']) ? [
             'client_id' => $providers['gmail']['client_id'],
             'client_secret' => $providers['gmail']['client_secret'],
