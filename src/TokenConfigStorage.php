@@ -17,7 +17,7 @@ class TokenConfigStorage implements TokenStorage
     public function get($email, $string = null)
     {
         $gmailConfig = $this->configRepo->get('gmail');
-        $token =  $gmailConfig["token_for_$email"];
+        $token = $gmailConfig->{"token_for_$email"};
 
         if ($string) {
             if (isset($token[$string])) {

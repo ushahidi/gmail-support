@@ -124,9 +124,9 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             return [MessageStatus::FAILED, false];
         }
         
-        $mailer = $gmail->mailer();
-        $from = $this->config['user'];
+        $from = isset($this->config['user']) ? $this->config['user'] : $gmail->getUser();
 
+        $mailer = $gmail->mailer();
         try {
             $response =  $mailer->createMessage($title, $from, $to, $message)->send();
             if (!isset($response->id)) {

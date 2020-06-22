@@ -117,7 +117,14 @@ class Client extends Google_Client
      */
     public function getToken($key = null)
     {
-        return $this->storage->get($this->user, $key);
+        $token = $this->storage->get($this->user, $key);
+
+        if(isset($token['email']))
+        {
+            $this->setUser($token['email']);
+        }
+
+        return $token;
     }
 
     /**
@@ -126,6 +133,16 @@ class Client extends Google_Client
     public function setToken($token)
     {
         $this->setAccessToken($token);
+    }
+
+    /**
+     * @param string $user
+     * 
+     * @return string|null
+     */
+    public function getUser($user)
+    {
+        return $this->user;
     }
 
     /**

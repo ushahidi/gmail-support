@@ -39,7 +39,7 @@ class GmailController
     {
         $code = $request->input('code');
 
-        $this->gmail->authorize($code);
+        $this->gmail->authenticate($code);
 
         return response()->json([
             'message' => 'User auth token authorized'
