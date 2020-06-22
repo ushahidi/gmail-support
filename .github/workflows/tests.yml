@@ -17,11 +17,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Cache dependencies
-        uses: actions/cache@v1
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Cache Composer Dependencies
+        id: composer-cache
+        uses: actions/cache@v2
         with:
-          path: ~/.composer/cache/files
-          key: dependencies-php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -31,7 +37,8 @@ jobs:
           coverage: none
 
       - name: Install Composer Dependencies
-        run: composer update --prefer-dist
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: Run tests
         run: vendor/bin/phpunit

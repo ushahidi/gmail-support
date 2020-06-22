@@ -28,11 +28,11 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      */
     public $contact_type = Contact::EMAIL;
 
-    public function __construct(Array $config, ConfigRepository $configRepo = null)
+    public function __construct(array $config, ConfigRepository $configRepo = null, \Closure $connectionFactory = null)
     {
         $this->config = $config;
         $this->configRepo = $configRepo;
-        $this->gmail = app('gmail', $config);
+        $this->connectionFactory = $connectionFactory;
     }
 
     public function getId()
@@ -52,8 +52,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     public function getOptions()
     {
-        return [
-        ];
+        return [];
     }
 
     public function getInboundFields()
@@ -70,12 +69,6 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         return true;
     }
 
-    /**
-     * Fetch email messages via gmail api
-     *
-     * @param  boolean $limit   maximum number of messages to fetch at a time
-     * @return int              number of messages fetched
-     */
     public function fetch($limit = false)
     {
         $this->initialize();
@@ -84,14 +77,22 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             $limit = 200;
         }
 
-        $mailbox = $this->gmail->mailbox();
+        $gmail = $this->connect();
+
+        if (!$gmail) {
+            // The connection didn't succeed, but this is not fatal to the application flow
+            // Just return 0 messages fetched
+            return [];
+        }
+
+        $mailbox = $gmail->mailbox();
         $mailbox->take(200);
 
         $mails = $mailbox->all($this->pageToken);
         $this->pageToken = $mailbox->pageToken;
         $messages = [];
 
-        $messages = $mails->map(function($mail) {
+        $messages = $mails->map(function ($mail) {
             if ($mail) {
                 // Save the message
                 return [
@@ -106,21 +107,26 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                     'additional_data'        => [],
                 ];
             }
-    
+
             return [];
         })->toArray();
 
         $this->update();
-        
+
         return $messages;
     }
 
     public function send($to, $message, $title = '')
     {
+        $gmail = $this->connect();
+
+        if (!$gmail) {
+            return [MessageStatus::FAILED, false];
+        }
+        
+        $mailer = $gmail->mailer();
         $from = $this->config['user'];
 
-        $this->gmail->setUser($from);
-        $mailer = $this->gmail->mailer();
         try {
             $response =  $mailer->createMessage($title, $from, $to, $message)->send();
             if (!isset($response->id)) {
@@ -128,22 +134,21 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                 return [MessageStatus::FAILED, false];
             }
             return [MessageStatus::SENT, $response->id];
-        } catch (Exception $e)
-        {
+        } catch (Exception $e) {
             app('log')->error($e->getMessage());
             return [MessageStatus::FAILED, false];
         }
     }
 
     /**
-     * Sanitize the BODY text string
+     * Sanitize the BODY email text string
      *
-     * @param string $text - message body string from email
+     * @param string $text - message text string from email
      * @return string
      */
     protected function getMessage($text)
     {
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_COMPAT , 'UTF-8');
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_COMPAT, 'UTF-8');
         $text = html_entity_decode($text, ENT_HTML5, 'UTF-8');
         $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
         $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
@@ -174,26 +179,46 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     private function initialize()
     {
-        $this->gmail->setUser($this->config['user']);
-
         $gmailConfig = $this->configRepo->get('gmail');
 
         isset($gmailConfig->next_page_token) ?
-                               $this->pageToken = $gmailConfig->next_page_token:
-                               $this->pageToken = null;
+            $this->pageToken = $gmailConfig->next_page_token :
+            $this->pageToken = null;
     }
 
     private function update()
     {
-        // Store the state in the database config for now
         $gmailConfig = $this->configRepo->get('gmail');
 
-        var_dump($this->pageToken);
-        
         $gmailConfig->setState([
             'next_page_token' => $this->pageToken,
         ]);
 
         $this->configRepo->update($gmailConfig);
+    }
+
+    private function connect()
+    {
+        // Check we have the required config
+        if (
+            !isset($this->config['user']) ||
+            !isset($this->config['client_id']) ||
+            !isset($this->config['client_secret']) ||
+            !isset($this->config['redirect_uri'])
+        ) {
+            app('log')->warning('Could not connect to gmail, incomplete config');
+            return;
+        }
+
+        $connection = ($this->connectionFactory)(
+            $this->config['user'],
+            [
+                'client_id' => $this->config['client_id'],
+                'client_secret' => $this->config['client_secret'],
+                'redirect_uri' => $this->config['redirect_uri']
+            ]
+        );
+
+        return $connection;
     }
 }
