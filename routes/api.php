@@ -1,6 +1,4 @@
 <?php
-use Ushahidi\Gmail\GmailController;
-
 $apiVersion = '5';
 $apiBase = 'api/v' . $apiVersion;
 

@@ -73,10 +73,6 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     {
         $this->initialize();
 
-        if ($limit === false) {
-            $limit = 200;
-        }
-
         $gmail = $this->connect();
 
         if (!$gmail) {
@@ -86,7 +82,10 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         }
 
         $mailbox = $gmail->mailbox();
-        $mailbox->take(200);
+        if ($limit === false) {
+            $limit = 200;
+        }
+        $mailbox->take($limit);
 
         $mails = $mailbox->all($this->pageToken);
         $this->pageToken = $mailbox->pageToken;
