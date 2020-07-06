@@ -29,7 +29,7 @@ class Client extends Google_Client
             $config['redirect_uri']
         );
 
-        if ($user) {
+        if ($user && $this->storage) {
             $this->refreshTokenIfNeeded();
         }
     }
@@ -136,11 +136,10 @@ class Client extends Google_Client
     }
 
     /**
-     * @param string $user
      * 
      * @return string|null
      */
-    public function getUser($user)
+    public function getUser()
     {
         return $this->user;
     }
