@@ -89,7 +89,8 @@ class Mailbox
     }
 
     /**
-     * @param $message
+     * @param string|Google_Service_Gmail_Message $message
+     * 
      * @return Message
      */
     public function get($message)
@@ -102,7 +103,7 @@ class Mailbox
             $message = $message->getId();
         }
 
-        return new Message($this->getMessage($message));
+        return new Message($this->getMessageRequest($message));
     }
 
     /**
@@ -136,13 +137,6 @@ class Mailbox
         return $messages;
     }
 
-    protected function getMessages($list)
-    {
-        return collect($list)->map(function ($message) {
-            return $this->get($message);
-        });
-    }
-
     protected function getBatchMessages($list)
     {
         $batchMessages = collect([]);
@@ -154,7 +148,7 @@ class Mailbox
         foreach ($chunkMessagesList as $chunkMessages) {
             $batch = $this->service->createBatch();
             foreach ($chunkMessages as $key => $message) {
-                $batch->add($this->getMessage($message->getId()), $key);
+                $batch->add($this->getMessageRequest($message->getId()), $key);
             }
             $response = $batch->execute();
             $batchMessages = $batchMessages->merge($response);
@@ -162,7 +156,12 @@ class Mailbox
 
         $this->client->setUseBatch(false);
 
-        return $batchMessages->map(function ($message) {
+        return $this->getMessages($batchMessages);
+    }
+
+    protected function getMessages($list)
+    {
+        return collect($list)->map(function ($message) {
             return $this->get($message);
         });
     }
@@ -172,7 +171,7 @@ class Mailbox
      *
      * @return Google_Service_Gmail_Message|RequestInterface
      */
-    private function getMessage($id)
+    private function getMessageRequest($id)
     {
         return $this->service->users_messages->get('me', $id);
     }
