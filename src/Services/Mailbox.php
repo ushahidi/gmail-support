@@ -32,10 +32,9 @@ class Mailbox
      */
     protected $params = [];
 
-    public function __construct(Google_Client $client, $params = [])
+    public function __construct(Google_Client $client)
     {
         $this->client = $client;
-        $this->params = $params;
         $this->service = new Google_Service_Gmail($client);
         $this->setUseBatch();
         $this->setSyncType("full");
@@ -53,12 +52,13 @@ class Mailbox
     }
 
     /**
-     * Set mailbox client sync
+     * Set mailbox client sync type
      *
      * @param string $type
      */
     public function setSyncType($type)
     {
+        $this->params = [];
         $this->type = $type;
         return $this;
     }

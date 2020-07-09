@@ -27,13 +27,13 @@ class Gmail extends Client
         $this->service = new Google_Service_Gmail($this);
     }
 
-    public function mailbox($params = [])
+    public function mailbox()
     {
         if (!$this->check()) {
             throw new Exception('No token credentials found.');
         }
 
-        return new Mailbox($this, $params);
+        return new Mailbox($this);
     }
 
     public function mailer()

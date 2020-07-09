@@ -49,9 +49,9 @@ class Message
         return $this->headers->get('Date');
     }
 
-    public function body()
+    public function body($type = 'plain')
     {
-        return $this->body;
+        return $this->body[$type] ?? null;
     }
 
     protected function getHeaders()
@@ -65,18 +65,18 @@ class Message
     protected function getMessageBody()
     {
         $parts = collect($this->payload->getParts());
-        $message = '';
+        $message = [];
 
         if (!empty($parts)) {
             foreach ($parts as $part) {
                 if ($part->getMimeType() == 'text/html') {
-                    $message = $this->decodeBody($part->getBody()->getData());
+                    $message['html'] = $this->decodeBody($part->getBody()->getData());
                 } elseif ($part->getMimeType() == 'text/plain') {
-                    $message = $this->decodeBody($part->getBody()->getData());
+                    $message['plain'] = $this->decodeBody($part->getBody()->getData());
                 }
             }
         } else {
-            $message = $this->decodeBody($this->payload->getBody()->getData());
+            $message['plain'] = $this->decodeBody($this->payload->getBody()->getData());
         }
 
         return $message;

@@ -22,6 +22,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     protected $configRepo;
 
+    protected $historyId;
+    protected $lastSync;
     protected $pageToken; // get mails for a page
 
     /**
@@ -88,9 +90,9 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             $limit = 200;
         }
 
-        $mails = isset($this->lastHistoryId) ?
-            $this->partialSync($mailbox, $limit) :
-            $this->fullSync($mailbox, $limit);
+        $mails = isset($this->lastHistoryId)
+            ? $this->partialSync($mailbox, $limit)
+            : $this->fullSync($mailbox, $limit);
 
         while ($mailbox->hasNextPage()) {
             $mails = $mails->merge($mails, $mailbox->next());
@@ -175,8 +177,6 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             ->take($limit)
             ->all();
 
-        $this->pageToken = $mailbox->pageToken;
-
         return $mails;
     }
 
@@ -197,8 +197,6 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             $mails = $this->fullSync($mailbox, $limit);
         }
 
-        $this->pageToken = $mailbox->pageToken;
-
         return $mails;
     }
 
@@ -214,7 +212,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $text = html_entity_decode($text, ENT_HTML5, 'UTF-8');
         $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
         $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
-        $text = preg_replace('/\s+/', ' ', $text);
+        // $text = preg_replace('/\s+/', '', $text);
         return $this->sanitize($text);
     }
 
@@ -226,9 +224,18 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      */
     protected function getEmail($from)
     {
-        $pattern = '/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b/i';
+        /**
+         * Source: https://stackoverflow.com/a/2934602/9852028
+         * 
+         * Decodes Unicode escape sequences like “\u00ed” to proper UTF-8 encoded characters
+         */
+        $string = preg_replace_callback('/\\\\u([0-9a-fA-F]{4})/', function ($match) {
+            return mb_convert_encoding(pack('H*', $match[1]), 'UTF-8', 'UCS-2BE');
+        }, $from);
 
-        if (preg_match_all($pattern, $from, $emails)) {
+        $pattern = "/[\._a-zA-Z0-9-]+@[\._a-zA-Z0-9-]+/i";
+
+        if (preg_match_all($pattern, $string, $emails)) {
             foreach ($emails as $key => $value) {
                 if (isset($value[0])) {
                     return $value[0];
@@ -236,7 +243,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             }
         }
 
-        return null;
+        return $string;
     }
 
     protected function sanitize($text)
