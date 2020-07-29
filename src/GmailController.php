@@ -16,12 +16,12 @@ class GmailController
         $providers = $this->configRepo->get('data-provider')->asArray();
         $user = isset($providers['gmail']) ? optional($providers['gmail'])['email'] : null;
         $config = isset($providers['gmail']) ? [
-            'client_id' => $providers['gmail']['client_id'],
-            'client_secret' => $providers['gmail']['client_secret'],
-            'redirect_uri' => $providers['gmail']['redirect_uri']
-        ] : null;
+            'client_id' => $providers['gmail']['client_id'] ?? config('services.gmail.client_id'),
+            'client_secret' => $providers['gmail']['client_secret'] ?? config('services.gmail.client_secret'),
+            'redirect_uri' => $providers['gmail']['redirect_uri'] ?? config('services.gmail.redirect_uri')
+        ] : [];
 
-        $this->gmail = app('gmail', $config, $user);
+        $this->gmail = app()->make('gmail', compact('config', 'user'));
         $this->gmail->setStorage(new TokenConfigStorage($this->configRepo));
     } 
 

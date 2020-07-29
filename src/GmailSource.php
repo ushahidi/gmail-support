@@ -22,7 +22,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     protected $configRepo;
 
-    protected $historyId;
+    protected $lastHistoryId;
     protected $lastSync;
     protected $pageToken; // get mails for a page
 
@@ -55,7 +55,45 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     public function getOptions()
     {
-        return [];
+        return [
+            'intro_text' => [
+                'label' => '',
+                'input' => 'read-only-text',
+                'description' => 'In order to receive posts by gmail, please input your account settings below and connect your gmail account above ',
+            ],
+            'email' => [
+                'label' => 'Email Address',
+                'input' => 'text',
+                'description' => '',
+                'placeholder' => 'johndoe@gmail.com',
+                'rules' => ['required', 'email']
+            ],            
+            'date' => [
+                'label' => 'Fetch Email From',
+                'input' => 'text',
+                'rules' => ['date']
+            ],
+            'client_id' => [
+                'label' => 'Client Id',
+                'input' => 'text',
+                'description' => 'Add the cliend id from your Gmail credentials. ',
+                'rules' => [],
+                'is_gmail_support' => true // This option can be provided via external configuration
+            ],
+            'client_secret' => [
+                'label' => 'Client Secret',
+                'input' => 'text',
+                'description' => 'Add the client secret from your Gmail credentials. ',
+                'rules' => [],
+                'is_gmail_support' => true
+            ],
+            'redirect_uri' => [
+                'label' => 'Redirect URL',
+                'input' => 'text',
+                'rules' => [],
+                'is_gmail_support' => true
+            ]
+        ];
     }
 
     public function getInboundFields()
@@ -91,9 +129,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         }
 
         $mails = isset($this->lastHistoryId)
-            ? $this->partialSync($mailbox, $limit)
-            : $this->fullSync($mailbox, $limit);
-
+                    ? $this->partialSync($mailbox, $limit)
+                    : $this->fullSync($mailbox, $limit);
         while ($mailbox->hasNextPage()) {
             $mails = $mails->merge($mails, $mailbox->next());
         }
@@ -165,19 +202,17 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      */
     protected function fullSync($mailbox, $limit)
     {
-        $date = isset($this->lastSync)
-            ? $this->lastSync
-            : (isset($this->config['date'])
-                ? Carbon::parse($this->config['date'])->timestamp
-                : Carbon::yesterday()->timestamp);
+        $mails = $mailbox->setSyncType("full");
 
-        $mails = $mailbox->setSyncType("full")
-            ->after($date)
-            ->label('INBOX')
+        if (isset($this->lastSync)) {
+            $mails->after($this->lastSync);
+        } elseif (isset($this->config['date'])) {
+            $mails->after(Carbon::parse($this->config['date'])->timestamp);
+        }
+
+        return $mails->label('INBOX')
             ->take($limit)
             ->all();
-
-        return $mails;
     }
 
     /**
@@ -208,11 +243,12 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      */
     protected function getMessage($text)
     {
+        $text = htmlspecialchars($text);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_COMPAT, 'UTF-8');
         $text = html_entity_decode($text, ENT_HTML5, 'UTF-8');
-        $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
-        $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
-        // $text = preg_replace('/\s+/', '', $text);
+        /** $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
+        * $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
+        **/
         return $this->sanitize($text);
     }
 
@@ -288,24 +324,27 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      */
     private function connect()
     {
+        $user        = $this->config['email'];
+        $credentials = [
+            'client_id' => $this->config['client_id'] ?? config('services.gmail.client_id'),
+            'client_secret' => $this->config['client_secret'] ?? config('services.gmail.client_secret') ,
+            'redirect_uri' => $this->config['redirect_uri'] ?? config('services.gmail.redirect_uri')
+        ];
+
         // Check we have the required config
         if (
-            !isset($this->config['email']) ||
-            !isset($this->config['client_id']) ||
-            !isset($this->config['client_secret']) ||
-            !isset($this->config['redirect_uri'])
+            !isset($user) ||
+            !isset($credentials['client_id']) ||
+            !isset($credentials['client_secret']) ||
+            !isset($credentials['redirect_uri'])
         ) {
             app('log')->warning('Could not connect to gmail, incomplete config');
             return;
         }
 
         $connection = ($this->connectionFactory)(
-            $this->config['email'],
-            [
-                'client_id' => $this->config['client_id'],
-                'client_secret' => $this->config['client_secret'],
-                'redirect_uri' => $this->config['redirect_uri']
-            ]
+            $user,
+            $credentials
         );
 
         $connection->setStorage(new TokenConfigStorage($this->configRepo));

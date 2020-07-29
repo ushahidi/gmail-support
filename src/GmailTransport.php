@@ -22,10 +22,8 @@ class GmailTransport extends Transport
     public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
     {
         $this->beforeSendPerformed($message);
-
-        $mailer = $this->gmail->mailer();
         
-        $mailer->setMessage($message)->send();
+        $this->gmail->mailer()->setMessage($message)->send();
 
         return $this->numberOfRecipients($message);
     }

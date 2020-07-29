@@ -6,12 +6,11 @@ use Google_Client;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Message;
 use Psr\Http\Message\RequestInterface;
-use Ushahidi\Gmail\Services\Traits\Filterable;
 use Ushahidi\Gmail\Services\Traits\QueryParameters;
 
 class Mailbox
 {
-    use QueryParameters, Filterable;
+    use QueryParameters;
 
     public $batch = true;
 
@@ -49,6 +48,7 @@ class Mailbox
     public function setUseBatch($useBatch = true)
     {
         $this->batch = $useBatch;
+        return $this;
     }
 
     /**

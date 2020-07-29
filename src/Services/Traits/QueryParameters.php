@@ -2,10 +2,13 @@
 
 namespace Ushahidi\Gmail\Services\Traits;
 
-use  Ushahidi\Gmail\Services\Mailbox;
+use Ushahidi\Gmail\Services\Mailbox;
+use Ushahidi\Gmail\Services\Traits\Filterable;
 
 trait QueryParameters
 {
+	use Filterable;
+	
 	/**
 	 * Specify the maximum number of messages to return
 	 *
