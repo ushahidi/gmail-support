@@ -9,18 +9,24 @@ class Message
 {
     public $id;
 
-    public $payload;
+    public $historyId;
 
-    public $parts;
+    public $payload;
 
     public $headers;
 
+    public $body;
+
+    public $message;
+
     public function __construct(Google_Service_Gmail_Message $message)
     {
-        $this->id = $message->getId();
-        $this->payload = $message->getPayload();
-        $this->parts = collect($this->payload->getParts());
-        $this->headers = $this->buildHeaders();
+        $this->message = $message;
+        $this->id = $this->message->getId();
+        $this->historyId = $this->message->getHistoryId();
+        $this->payload = $this->message->getPayload();
+        $this->body = $this->getMessageBody();
+        $this->headers = $this->getHeaders();
     }
 
     public function to()
@@ -43,30 +49,37 @@ class Message
         return $this->headers->get('Date');
     }
 
-    public function body()
+    public function body($type = 'plain')
     {
-        $message = '';
+        return $this->body[$type] ?? null;
+    }
 
-        if (!empty($this->parts)) {
-            foreach ($this->parts as $part) {
+    protected function getHeaders()
+    {
+        return collect($this->payload->getHeaders())
+            ->mapWithKeys(function ($header) {
+                return [$header->name => $header->value];
+        });
+    }
+
+    protected function getMessageBody()
+    {
+        $parts = collect($this->payload->getParts());
+        $message = [];
+
+        if (!empty($parts)) {
+            foreach ($parts as $part) {
                 if ($part->getMimeType() == 'text/html') {
-                    $message = $this->decodeBody($part->getBody()->getData());
+                    $message['html'] = $this->decodeBody($part->getBody()->getData());
                 } elseif ($part->getMimeType() == 'text/plain') {
-                    $message = $this->decodeBody($part->getBody()->getData());
+                    $message['plain'] = $this->decodeBody($part->getBody()->getData());
                 }
             }
         } else {
-            $message = $this->decodeBody($this->payload->getBody()->getData());
+            $message['plain'] = $this->decodeBody($this->payload->getBody()->getData());
         }
 
         return $message;
-    }
-
-    protected function buildHeaders()
-    {
-        return collect($this->payload->getHeaders())->mapWithKeys(function ($header) {
-            return [$header->name => $header->value];
-        });
     }
 
     protected function decodeBody($data)

@@ -14,9 +14,10 @@ class GmailServiceProvider extends ServiceProvider
     public function register()
     {
         // Main Service
-        $this->app->bind('gmail', function ($app, $config = null, $user = null) {
-            $config = $config ?: $app['config']['services.gmail'];
-            $gmail = new Gmail($config, $user);
+        $this->app->bind('gmail', function ($app, $params) {
+            $user   = $params['user'] ?? null;
+            $config = $params['config'];
+            $gmail  = new Gmail($config, $user);
             $gmail->setStorage($this->app->make(TokenDiskStorage::class));
             return $gmail;
         });
@@ -47,9 +48,12 @@ class GmailServiceProvider extends ServiceProvider
             return new GmailSource(
                 $config, 
                 $this->app->make('Ushahidi\Core\Entity\ConfigRepository'), 
-                function ($user, array $config)
+                function ($user, $config = null)
                 {
-                    return $this->app->make('gmail', $config, $user);
+                    return $this->app->make('gmail', [
+                        'user' => $user,
+                        'config' => $config
+                    ]);
                 }
             );
         });

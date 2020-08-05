@@ -19,26 +19,31 @@ class TokenConfigStorage implements TokenStorage
         $gmailConfig = $this->configRepo->get('gmail');
         $token = $gmailConfig->{"token_for_$email"};
 
-        if ($string) {
-            if (isset($token[$string])) {
-                return $token[$string];
-            }
+        if ($string && isset($token[$string])) {
+            return $token[$string];
         } else {
             return $token;
         }
-
-        return null;
     }
 
     public function save($email, $token)
     {
         $gmailConfig = $this->configRepo->get('gmail');
-
+        $dataProvider = $this->configRepo->get('data-provider');
+        
+        $credentials = $dataProvider->asArray()['gmail'];
+        $credentials['authenticated'] = empty($token) ? false : true;
+       
         $gmailConfig->setState([
             "token_for_$email" => $token,
         ]);
 
+        $dataProvider->setState([
+            'gmail' => $credentials
+        ]);
+
         $this->configRepo->update($gmailConfig);
+        $this->configRepo->update($dataProvider);
     }
 
     public function delete($email)
