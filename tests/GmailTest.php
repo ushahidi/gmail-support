@@ -28,7 +28,6 @@ class GmailTest extends TestCase
         $gmail = $this->app->make(Gmail::class);
         $gmail->addAccessToken($token);
 
-        $this->assertTrue($gmail->hasToken());
         $this->assertEquals($token, $gmail->getAccessToken());
     }
 }
