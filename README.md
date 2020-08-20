@@ -37,8 +37,8 @@ Update your `config/services.php` file by adding your gmail credentials.
 
 ```php
     'gmail' => [
-        'client_id' => env('GMAIL_ID'),
-        'client_secret' => env('GMAIL_SECRET'),
+        'client_id' => env('GMAIL_CLIENT_ID'),
+        'client_secret' => env('GMAIL_CLIENT_SECRET'),
         'redirect_uri' => env('GMAIL_REDIRECT_URI','urn:ietf:wg:oauth:2.0:oob'),
     ]
 ```
@@ -46,8 +46,8 @@ Update your `config/services.php` file by adding your gmail credentials.
 Update your `.env` file by adding your server key.
 
 ```env
-GMAIL_ID=
-GMAIL_SECRET=
+GMAIL_CLIENT_ID=
+GMAIL_CLIENT_SECRET=
 GMAIL_REDIRECT_URI=
 ```
 

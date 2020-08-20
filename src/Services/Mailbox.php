@@ -5,12 +5,10 @@ namespace Ushahidi\Gmail\Services;
 use Google_Client;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Message;
-use Psr\Http\Message\RequestInterface;
-use Ushahidi\Gmail\Services\Traits\QueryParameters;
 
 class Mailbox
 {
-    use QueryParameters;
+    use Traits\QueryParameters;
 
     public $batch = true;
 
@@ -89,21 +87,22 @@ class Mailbox
     }
 
     /**
+     * Get a Mail
      * @param string|Google_Service_Gmail_Message $message
      * 
-     * @return Message
+     * @return Mail
      */
     public function get($message)
     {
         if ($message instanceof Google_Service_Gmail_Message) {
             if (isset($message->historyId)) {
-                return new Message($message);
+                return new Mail($message);
             }
 
             $message = $message->getId();
         }
 
-        return new Message($this->getMessageRequest($message));
+        return new Mail($this->getMessageRequest($message));
     }
 
     /**
@@ -148,7 +147,10 @@ class Mailbox
         foreach ($chunkMessagesList as $chunkMessages) {
             $batch = $this->service->createBatch();
             foreach ($chunkMessages as $key => $message) {
-                $batch->add($this->getMessageRequest($message->getId()), $key);
+                $batch->add(
+                    $this->getMessageRequest($message->getId()), 
+                    $key
+                );
             }
             $response = $batch->execute();
             $batchMessages = $batchMessages->merge($response);
@@ -169,7 +171,7 @@ class Mailbox
     /**
      * @param $id
      *
-     * @return Google_Service_Gmail_Message|RequestInterface
+     * @return Google_Service_Gmail_Message|\Psr\Http\Message\RequestInterface
      */
     private function getMessageRequest($id)
     {

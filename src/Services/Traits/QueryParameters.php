@@ -8,11 +8,11 @@ use Ushahidi\Gmail\Services\Traits\Filterable;
 trait QueryParameters
 {
 	use Filterable;
-	
+
 	/**
 	 * Specify the maximum number of messages to return
 	 *
-	 * @param  int  $number
+	 * @param int $number
 	 *
 	 * @return self|Mailbox
 	 */
@@ -26,7 +26,7 @@ trait QueryParameters
 	/**
 	 * Set the page token to retrieve a specific page of results in the list.
 	 *
-	 * @param  string  $token
+	 * @param string $token
 	 *
 	 * @return self|Mailbox
 	 */
@@ -54,7 +54,7 @@ trait QueryParameters
 	/**
 	 * Set the history types.
 	 *
-	 * @param  string  $value
+	 * @param string $value
 	 *
 	 * @return self|Mailbox
 	 */
@@ -72,7 +72,7 @@ trait QueryParameters
 	/**
 	 * Set query filters for the request.
 	 *
-	 * @param  string  $query
+	 * @param string $query
 	 *
 	 * @return self|Mailbox
 	 */
@@ -90,7 +90,7 @@ trait QueryParameters
 	/**
 	 * Set the list of IDs of labels applied to the query.
 	 *
-	 * @param  string|array  $label
+	 * @param string|array $label
 	 *
 	 * @return self|Mailbox
 	 */
