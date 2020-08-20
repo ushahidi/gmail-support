@@ -16,9 +16,9 @@ class GmailServiceProvider extends ServiceProvider
         // Main Service
         $this->app->bind('gmail', function ($app, $params) {
             $user   = $params['user'] ?? null;
-            $config = $params['config'];
+            $config = $params['config'] ?? config('services.gmail');
             $gmail  = new Gmail($config, $user);
-            $gmail->setStorage($this->app->make(TokenDiskStorage::class));
+            $gmail->setStorage($app->make(TokenDiskStorage::class));
             return $gmail;
         });
 

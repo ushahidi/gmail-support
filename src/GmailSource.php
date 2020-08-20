@@ -18,18 +18,17 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 {
     use MapsInboundFields;
 
-    protected $config;
-
-    protected $configRepo;
-
-    protected $lastHistoryId;
-    protected $lastSync;
-    protected $pageToken; // get mails for a page
-
     /**
      * Contact type user for this provider
      */
     public $contact_type = Contact::EMAIL;
+
+    protected $config;
+    protected $configRepo;
+
+    protected $pageToken; // get mails for a page
+    protected $lastSync;
+    protected $lastHistoryId;
 
     public function __construct(array $config, ConfigRepository $configRepo = null, Closure $connectionFactory = null)
     {
@@ -67,7 +66,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                 'description' => '',
                 'placeholder' => 'johndoe@gmail.com',
                 'rules' => ['required', 'email']
-            ],            
+            ],
             'date' => [
                 'label' => 'Fetch Email From',
                 'input' => 'text',
@@ -110,6 +109,15 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         return true;
     }
 
+    /**
+     * Fetch messages from provider
+     *
+     * For services where we have to poll for message (Twitter, Email, FrontlineSMS) this should
+     * poll the service and return an array of messages
+     *
+     * @param  boolean|int $limit   maximum number of messages to fetch at a time
+     * @return array            array of messages
+     */
     public function fetch($limit = false)
     {
         $this->initialize();
@@ -128,9 +136,16 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             $limit = 200;
         }
 
+        /**
+         * Fetch all mails via a partial or full synchronization 
+         * 
+         * Read More: https://developers.google.com/gmail/api/guides/sync
+         */
         $mails = isset($this->lastHistoryId)
-                    ? $this->partialSync($mailbox, $limit)
-                    : $this->fullSync($mailbox, $limit);
+            ? $this->partialSync($mailbox, $limit)
+            : $this->fullSync($mailbox, $limit);
+
+        // Check if the Mailbox has more mails and try to fetch them
         while ($mailbox->hasNextPage()) {
             $mails = $mails->merge($mails, $mailbox->next());
         }
@@ -144,15 +159,15 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $messages = [];
 
         $messages = $mails->map(function ($mail) {
-            if ($mail && !empty($mail->body)) {
+            if ($mail && !empty($mail->bodyParts)) {
                 // Save the message
                 return [
                     'type'                   => 'email',
                     'contact_type'           => 'email',
                     'from'                   => $this->getEmail($mail->from()),
-                    'message'                => $this->getMessage($mail->body()),
+                    'message'                => $this->removeEmoji($mail->body('markdown')),
                     'to'                     => $this->getEmail($mail->to()),
-                    'title'                  => $this->sanitize($mail->subject()),
+                    'title'                  => $mail->subject(),
                     'datetime'               => $mail->date(),
                     'data_source_message_id' => $mail->id,
                     'additional_data'        => [
@@ -163,7 +178,9 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
             return [];
         })
-            ->filter()
+            ->filter(function ($message) {
+                return !empty($message['message']);
+            })
             ->all();
 
         $this->update();
@@ -171,6 +188,12 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         return $messages;
     }
 
+    /**
+     * @param  string  to Phone number to receive the message
+     * @param  string  message Message to be sent
+     * @param  string  title   Message title
+     * @return array   Array of message status, and tracking ID.
+     */
     public function send($to, $message, $title = '')
     {
         $gmail = $this->connect();
@@ -198,6 +221,9 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     /**
      * Perform a full synchronization
      *
+     * @param \Ushahidi\Gmail\Services\Mailbox $mailbox
+     * @param int $limit
+     *
      * @return \Illuminate\Support\Collection
      */
     protected function fullSync($mailbox, $limit)
@@ -217,7 +243,10 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     /**
      * Perform a partial synchronization
-     *
+     * 
+     * @param \Ushahidi\Gmail\Services\Mailbox $mailbox
+     * @param int $limit
+     * 
      * @return \Illuminate\Support\Collection
      */
     protected function partialSync($mailbox, $limit)
@@ -246,10 +275,42 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $text = htmlspecialchars($text);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_COMPAT, 'UTF-8');
         $text = html_entity_decode($text, ENT_HTML5, 'UTF-8');
-        /** $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
-        * $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
-        **/
-        return $this->sanitize($text);
+        $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
+        $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
+        return $text;
+    }
+
+    /**
+     * Remove Emoji Characters in PHP
+     * 
+     * Source: https://medium.com/coding-cheatsheet/remove-emoji-characters-in-php-236034946f51
+     * 
+     * @param string $string
+     * @return string
+     */
+    protected function removeEmoji($string)
+    {
+        // Match Emoticons
+        $regex_emoticons = '/[\x{1F600}-\x{1F64F}]/u';
+        $clear_string = preg_replace($regex_emoticons, '', $string);
+
+        // Match Miscellaneous Symbols and Pictographs
+        $regex_symbols = '/[\x{1F300}-\x{1F5FF}]/u';
+        $clear_string = preg_replace($regex_symbols, '', $clear_string);
+
+        // Match Transport And Map Symbols
+        $regex_transport = '/[\x{1F680}-\x{1F6FF}]/u';
+        $clear_string = preg_replace($regex_transport, '', $clear_string);
+
+        // Match Miscellaneous Symbols
+        $regex_misc = '/[\x{2600}-\x{26FF}]/u';
+        $clear_string = preg_replace($regex_misc, '', $clear_string);
+
+        // Match Dingbats
+        $regex_dingbats = '/[\x{2700}-\x{27BF}]/u';
+        $clear_string = preg_replace($regex_dingbats, '', $clear_string);
+
+        return $clear_string;
     }
 
     /**
@@ -280,11 +341,6 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         }
 
         return $string;
-    }
-
-    protected function sanitize($text)
-    {
-        return trim(preg_replace('/[^a-z\d ]/i', '', $text));
     }
 
     private function initialize()
@@ -327,7 +383,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $user        = $this->config['email'];
         $credentials = [
             'client_id' => $this->config['client_id'] ?? config('services.gmail.client_id'),
-            'client_secret' => $this->config['client_secret'] ?? config('services.gmail.client_secret') ,
+            'client_secret' => $this->config['client_secret'] ?? config('services.gmail.client_secret'),
             'redirect_uri' => $this->config['redirect_uri'] ?? config('services.gmail.redirect_uri')
         ];
 

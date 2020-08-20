@@ -26,7 +26,7 @@ trait Filterable
 	/**
 	 * Filter to get only unread emalis
 	 *
-	 * @param $query
+	 * @param string $query
 	 *
 	 * @return self|Mailbox
 	 */
@@ -40,7 +40,7 @@ trait Filterable
 	/**
 	 * Filter to get only emails from a specific email address
 	 *
-	 * @param $email
+	 * @param string $email
 	 *
 	 * @return self|Mailbox
 	 */
@@ -54,7 +54,7 @@ trait Filterable
 	/**
 	 * add an array of from addresses
 	 *
-	 * @param $emails
+	 * @param array $emails
 	 *
 	 * @return self|Mailbox
 	 */
@@ -71,7 +71,7 @@ trait Filterable
 	/**
 	 * Filter to get only emails from a specific email address
 	 *
-	 * @param $email
+	 * @param string $email
 	 *
 	 * @return self|Mailbox
 	 */
@@ -85,7 +85,7 @@ trait Filterable
 	/**
 	 * Filter to get only emails after a specific date
 	 *
-	 * @param $date
+	 * @param string $date
 	 *
 	 * @return self|Mailbox
 	 */
@@ -99,7 +99,7 @@ trait Filterable
 	/**
 	 * Filter to get only emails before a specific date
 	 *
-	 * @param $date
+	 * @param string $date
 	 *
 	 * @return self|Mailbox
 	 */
@@ -112,6 +112,7 @@ trait Filterable
 
 	/**
 	 * Filters emails by tag
+	 * 
 	 * Example:
 	 * * starred
 	 * * inbox
@@ -121,7 +122,7 @@ trait Filterable
 	 * * draft
 	 * * trash
 	 *
-	 * @param $box
+	 * @param string $box
 	 *
 	 * @return self|Mailbox
 	 */
