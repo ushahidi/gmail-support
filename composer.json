@@ -2,13 +2,18 @@
     "name": "ushahidi/gmail-support",
     "description": "Support Gmail as Data Provider",
     "type": "library",
-    "license": "GNU",
+    "license": "AGPL-3.0-or-later",
     "authors": [
         {
             "name": "Wisdom Ebong",
             "email": "wisdomaebong@gmail.com"
         }
     ],
+    "support": {
+        "chat": "https://gitter.im/ushahidi/Community",
+        "source": "https://github.com/ushahidi/gmail-support",
+        "issues": "https://github.com/ushahidi/gmail-support"
+    },
     "require": {
         "ext-json": "*",
         "google/apiclient": "^2.0",
