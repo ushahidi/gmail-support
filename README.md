@@ -2,7 +2,7 @@ Ushahidi Gmail Support
 ============
 
 ## What is this package for?
-This gmail support library is a composer package, that extends the ushahidi platform datasource manager and adds gmail as a data provider. It allows the platform to authenticate a gmail account, giving the access to send and receive messages over gmail api.
+This gmail support library is a composer package, that extends the ushahidi platform datasource manager, adding *Gmail* as a data source. It allows the platform to authenticate a gmail account, giving the access to send and receive messages via Gmail Service API instead of the default POP/IMAP.
 
 ## Installation
 You can install the package via composer:
@@ -20,7 +20,7 @@ $app->register(Ushahidi\Gmail\GmailServiceProvider::class);
 ```
 
 ## Usage
-Update your `config/services.php` file by adding your gmail credentials.
+Update your `config/services.php` file by adding your Gmail API credentials.
 
 ```php
     'gmail' => [
@@ -38,17 +38,18 @@ GMAIL_CLIENT_SECRET=
 GMAIL_REDIRECT_URI=
 ```
 
+*Tip: For quick gmail authentication setup run the artisan command*
+
+```bash
+$ php artisan gmail:auth
+```
+
 To make use of this support package for mailing in your laravel app, update your `.env` and set your mail driver to `gmail`.
 
 ```env
 MAIL_DRIVER=gmail
 ```
 
-*Tip: For quick gmail authentication setup run the artisan command*
-
-```bash
-$ php artisan gmail:auth
-```
 
 
 
