@@ -13,19 +13,6 @@ $ composer require ushahidi/gmail-support
 
 The above command will add the package as a dependency in your current project.
 
-*Note: This package is currently in development mode, so to set up, update the `composer.json` file in your usahidi platform codebase laravel installation.*
-
-```json
-"repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/webong/gmail-support"
-        }
-    ],
-```
-
-The package should automatically register itself. 
-
 *Note: In a Ushahidi platform codebase, the package needs to be manually registered. Add the code below to the `boostrap/lumen.php` file*
 
 ```php
