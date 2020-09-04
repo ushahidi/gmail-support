@@ -50,8 +50,8 @@ To make use of this support package for mailing in your laravel app, update your
 MAIL_DRIVER=gmail
 ```
 
-
-
+# Track the progress of the GMail integration project here
+https://github.com/ushahidi/platform/projects/7
 
  
 
