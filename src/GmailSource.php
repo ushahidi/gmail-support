@@ -192,9 +192,12 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      * @param  string  to Phone number to receive the message
      * @param  string  message Message to be sent
      * @param  string  title   Message title
+     * @param  string  contact_type type of the contact to reach out to
+     *                              (for multi-channel datasources)
+     * 
      * @return array   Array of message status, and tracking ID.
      */
-    public function send($to, $message, $title = '')
+    public function send($to, $message, $title = '', $contact_type = null)
     {
         $gmail = $this->connect();
 
