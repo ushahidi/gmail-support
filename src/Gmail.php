@@ -47,16 +47,17 @@ class Gmail extends Client
 
     /**
      * @param $code
+     * 
      * @return array|string
+     * 
      * @throws Exception
      */
     public function authenticate($code)
     {
         $token = $this->fetchAccessTokenWithAuthCode($code);
-        $me = $this->user();
-        if (property_exists($me, 'emailAddress')) {
-            $this->user = $me->emailAddress;
-            $token['email'] = $me->emailAddress;
+    
+        if (property_exists($me = $this->user(), 'emailAddress')) {
+            $this->user = $token['email'] = $me->emailAddress;
         }
 
         $this->addAccessToken($token);
@@ -76,7 +77,7 @@ class Gmail extends Client
             $this->setLoginHint($loginHint);
         }
 
-        $this->setAccessType( 'offline');
+        $this->setAccessType('offline');
 
         $this->setScopes(Google_Service_Gmail::MAIL_GOOGLE_COM);
 

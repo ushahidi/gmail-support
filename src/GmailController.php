@@ -7,11 +7,16 @@ use Ushahidi\Core\Entity\ConfigRepository;
 
 class GmailController
 {
+    /** @var Gmail */
     public $gmail;
+
+    public $configRepo;
 
     public function __construct(ConfigRepository $configRepo)
     {
-        $providers = $configRepo->get('data-provider')->asArray();
+        $this->configRepo = $configRepo;
+
+        $providers = $this->configRepo->get('data-provider')->asArray();
 
         $user = isset($providers['gmail'])
             ? optional($providers['gmail'])['email']
@@ -49,6 +54,14 @@ class GmailController
         $code = $request->input('code');
 
         $this->gmail->authenticate($code);
+
+        $gmailConfig = $this->configRepo->get('gmail');
+
+        $gmailConfig->setState([
+            "first_sync_date" => $request->input('date'),
+        ]);
+
+        $this->configRepo->update($gmailConfig);
 
         return response()->json([
             'message' => 'User auth token authorized'

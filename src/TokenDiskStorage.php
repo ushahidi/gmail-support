@@ -38,9 +38,9 @@ class TokenDiskStorage implements TokenStorage
         return null;
     }
 
-    public function save($email, $token)
+    public function save($token)
     {
-        $file = $this->getFile($email);
+        $file = $this->getFile($token['email']);
 
         if ($this->disk->exists($file)) {
             if (empty($token['email'])) {

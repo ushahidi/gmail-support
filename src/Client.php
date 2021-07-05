@@ -23,6 +23,7 @@ class Client extends Google_Client
         $this->user = $user;
 
         $config = optional($config);
+
         $this->setClientConfig(
             $config['client_id'],
             $config['client_secret'],
@@ -88,7 +89,7 @@ class Client extends Google_Client
     {
         $token['email'] = isset($token['email']) ? $token['email'] : $this->user;
 
-        $this->storage->save($token['email'], $token);
+        $this->storage->save($token);
     }
 
     /**
@@ -119,8 +120,7 @@ class Client extends Google_Client
     {
         $token = $this->storage->get($this->user, $key);
 
-        if(isset($token['email']))
-        {
+        if (isset($token['email'])) {
             $this->setUser($token['email']);
         }
 

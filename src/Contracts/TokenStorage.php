@@ -4,9 +4,9 @@ namespace Ushahidi\Gmail\Contracts;
 
 interface TokenStorage
 {
-    public function get($email, $string = null);
+    public function get(string $email, string $key = null);
 
-    public function save($email, $token);
+    public function save(array $token);
 
-    public function delete($email);
+    public function delete(string $email);
 }

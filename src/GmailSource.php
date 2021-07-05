@@ -27,7 +27,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     protected $configRepo;
 
     protected $pageToken; // get mails for a page
-    protected $lastSync;
+    protected $firstSyncDate;
+    protected $lastSyncDate;
     protected $lastHistoryId;
 
     public function __construct(array $config, ConfigRepository $configRepo = null, Closure $connectionFactory = null)
@@ -58,24 +59,12 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             'intro_text' => [
                 'label' => '',
                 'input' => 'read-only-text',
-                'description' => 'In order to receive posts by gmail, please input your account settings below and connect your gmail account above ',
-            ],
-            'email' => [
-                'label' => 'Email Address',
-                'input' => 'text',
-                'description' => '',
-                'placeholder' => 'johndoe@gmail.com',
-                'rules' => ['required', 'email']
-            ],
-            'date' => [
-                'label' => 'Fetch Email From',
-                'input' => 'text',
-                'rules' => ['date']
+                'description' => 'In order to receive posts by gmail, connect your google account above ',
             ],
             'client_id' => [
                 'label' => 'Client Id',
                 'input' => 'text',
-                'description' => 'Add the cliend id from your Gmail credentials. ',
+                'description' => 'Add the client id from your Gmail credentials. ',
                 'rules' => [],
                 'is_gmail_support' => true // This option can be provided via external configuration
             ],
@@ -150,11 +139,11 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             $mails = $mails->merge($mails, $mailbox->next());
         }
 
-        $this->lastHistoryId = optional($mails->first())->historyId ?? $mailbox->historyId;
-
         $this->pageToken = $mailbox->pageToken;
 
-        $this->lastSync = Carbon::now()->timestamp;
+        $this->lastHistoryId = optional($mails->first())->historyId ?? $mailbox->historyId;
+
+        $this->lastSyncDate = Carbon::now()->timestamp;
 
         $messages = [];
 
@@ -165,7 +154,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                     'type'                   => 'email',
                     'contact_type'           => 'email',
                     'from'                   => $this->getEmail($mail->from()),
-                    'message'                => $this->removeEmoji($mail->body('markdown')),
+                    'message'                => $mail->body('markdown'),
                     'to'                     => $this->getEmail($mail->to()),
                     'title'                  => $mail->subject(),
                     'datetime'               => $mail->date(),
@@ -208,6 +197,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $from = isset($this->config['email']) ? $this->config['email'] : $gmail->getUser();
 
         $mailer = $gmail->mailer();
+
         try {
             $response =  $mailer->createMessage($title, $from, $to, $message)->send();
             if (!isset($response->id)) {
@@ -233,10 +223,10 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     {
         $mails = $mailbox->setSyncType("full");
 
-        if (isset($this->lastSync)) {
-            $mails->after($this->lastSync);
-        } elseif (isset($this->config['date'])) {
-            $mails->after(Carbon::parse($this->config['date'])->timestamp);
+        if (isset($this->lastSyncDate)) {
+            $mails->after($this->lastSyncDate);
+        } elseif (isset($this->firstSyncDate)) {
+            $mails->after(Carbon::parse($this->firstSyncDate)->timestamp);
         }
 
         return $mails->label('INBOX')
@@ -348,32 +338,36 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     private function initialize()
     {
-        $gmailConfig = $this->configRepo->get('gmail');
+        $config = $this->configRepo->get('gmail');
 
-        isset($gmailConfig->next_page_token)
-            ? $this->pageToken = $gmailConfig->next_page_token
+        isset($config->next_page_token)
+            ? $this->pageToken = $config->next_page_token
             : $this->pageToken = null;
 
-        isset($gmailConfig->last_history_id)
-            ? $this->lastHistoryId = $gmailConfig->last_history_id
+        isset($config->last_history_id)
+            ? $this->lastHistoryId = $config->last_history_id
             : $this->lastHistoryId = null;
 
-        isset($gmailConfig->last_sync)
-            ? $this->lastSync = $gmailConfig->last_sync
-            : $this->lastSync = null;
+        isset($config->last_sync_date)
+            ? $this->lastSyncDate = $config->last_sync_date
+            : $this->lastSyncDate = null;
+
+        isset($config->first_sync_date)
+            ? $this->firstSyncDate = $config->first_sync_date
+            : $this->firstSyncDate = null;
     }
 
     private function update()
     {
-        $gmailConfig = $this->configRepo->get('gmail');
+        $config = $this->configRepo->get('gmail');
 
-        $gmailConfig->setState([
+        $config->setState([
             'next_page_token' => $this->pageToken,
             'last_history_id' => $this->lastHistoryId,
-            'last_sync'       => $this->lastSync
+            'last_sync_date'  => $this->lastSyncDate
         ]);
 
-        $this->configRepo->update($gmailConfig);
+        $this->configRepo->update($config);
     }
 
     /**
@@ -383,7 +377,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      */
     private function connect()
     {
-        $user        = $this->config['email'];
+        $user = $this->config['email'];
+        
         $credentials = [
             'client_id' => $this->config['client_id'] ?? config('services.gmail.client_id'),
             'client_secret' => $this->config['client_secret'] ?? config('services.gmail.client_secret'),
