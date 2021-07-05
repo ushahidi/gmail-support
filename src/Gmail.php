@@ -79,7 +79,7 @@ class Gmail extends Client
 
         $this->setAccessType('offline');
 
-        $this->setScopes(Google_Service_Gmail::GMAIL_COMPOSE, Google_Service_Gmail::GMAIL_READONLY, Google_Service_Gmail::GMAIL_SEND);
+        $this->setScopes(Google_Service_Gmail::GMAIL_READONLY, Google_Service_Gmail::GMAIL_SEND);
 
         return $this->createAuthUrl();
     }
