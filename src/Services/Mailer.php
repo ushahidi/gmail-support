@@ -54,8 +54,10 @@ class Mailer
      */
     public function setMessage($message)
     {
-        $this->mime = (new Swift_Mime_ContentEncoder_Base64ContentEncoder)
-            ->encodeString($message->toString());
+        // $this->mime = (new Swift_Mime_ContentEncoder_Base64ContentEncoder)
+        //     ->encodeString($message->toString());
+
+        $this->mime = base64_encode($message->toString());
 
         return $this;
     }

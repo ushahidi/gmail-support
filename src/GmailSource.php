@@ -201,7 +201,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         try {
             $response =  $mailer->createMessage($title, $from, $to, $message)->send();
             if (!isset($response->id)) {
-                app('log')->error("Twitter: Send failed", ['response' => $response]);
+                app('log')->error("Gmail: Send failed", ['response' => $response]);
                 return [MessageStatus::FAILED, false];
             }
             return [MessageStatus::SENT, $response->id];
