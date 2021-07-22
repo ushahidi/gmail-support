@@ -86,7 +86,10 @@ class Gmail extends Client
 
     public function logout()
     {
-        $this->revokeToken();
+        try {
+            $this->revokeToken();
+        } catch (\Throwable $th) {}
+
         $this->deleteAccessToken();
     }
 

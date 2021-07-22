@@ -143,7 +143,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
         $this->lastHistoryId = optional($mails->first())->historyId ?? $mailbox->historyId;
 
-        $this->lastSyncDate = Carbon::now()->timestamp;
+        $this->lastSyncDate = Carbon::now();
 
         $messages = [];
 
@@ -224,7 +224,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $mails = $mailbox->setSyncType("full");
 
         if (isset($this->lastSyncDate)) {
-            $mails->after($this->lastSyncDate);
+            $mails->after(Carbon::parse($this->lastSyncDate)->timestamp);
         } elseif (isset($this->firstSyncDate)) {
             $mails->after(Carbon::parse($this->firstSyncDate)->timestamp);
         }

@@ -53,8 +53,12 @@ class TokenConfigStorage implements TokenStorage
         $dataProvider = $this->configRepo->get('data-provider');
         $credentials = $dataProvider->asArray()['gmail'];
 
+        $credentials['authenticated'] = false;
+
+        unset($credentials['email']);
+
         $dataProvider->setState([
-            'gmail' => $credentials + [ 'email' => '', 'authenticated' => false ]
+            'gmail' => $credentials
         ]);
 
         $gmailConfig->setState([
