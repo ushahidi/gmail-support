@@ -62,7 +62,7 @@ class TokenConfigStorage implements TokenStorage
         ]);
 
         $gmailConfig->setState([
-            "token_for_{$email}" => '',
+            "token_for_{$email}" => [],
         ]);
 
         $this->configRepo->update($gmailConfig);
