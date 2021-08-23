@@ -2,6 +2,7 @@
 
 namespace Ushahidi\Gmail;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Ushahidi\Core\Entity\ConfigRepository;
 
@@ -58,7 +59,7 @@ class GmailController
         $gmailConfig = $this->configRepo->get('gmail');
 
         $gmailConfig->setState([
-            "first_sync_date" => $request->input('date'),
+            "first_sync_date" => Carbon::parse($request->input('date'))->format('Y-m-d H:i:s'),
         ]);
 
         $this->configRepo->update($gmailConfig);

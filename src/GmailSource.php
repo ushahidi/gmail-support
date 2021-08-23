@@ -126,8 +126,8 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         }
 
         /**
-         * Fetch all mails via a partial or full synchronization 
-         * 
+         * Fetch all mails via a partial or full synchronization
+         *
          * Read More: https://developers.google.com/gmail/api/guides/sync
          */
         $mails = isset($this->lastHistoryId)
@@ -143,7 +143,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
         $this->lastHistoryId = optional($mails->first())->historyId ?? $mailbox->historyId;
 
-        $this->lastSyncDate = Carbon::now();
+        $this->lastSyncDate = Carbon::now()->format("Y-m-d H:i:s");
 
         $messages = [];
 
@@ -183,7 +183,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      * @param  string  title   Message title
      * @param  string  contact_type type of the contact to reach out to
      *                              (for multi-channel datasources)
-     * 
+     *
      * @return array   Array of message status, and tracking ID.
      */
     public function send($to, $message, $title = '', $contact_type = null)
@@ -236,10 +236,10 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     /**
      * Perform a partial synchronization
-     * 
+     *
      * @param \Ushahidi\Gmail\Services\Mailbox $mailbox
      * @param int $limit
-     * 
+     *
      * @return \Illuminate\Support\Collection
      */
     protected function partialSync($mailbox, $limit)
@@ -275,9 +275,9 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
     /**
      * Remove Emoji Characters in PHP
-     * 
+     *
      * Source: https://medium.com/coding-cheatsheet/remove-emoji-characters-in-php-236034946f51
-     * 
+     *
      * @param string $string
      * @return string
      */
@@ -316,7 +316,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     {
         /**
          * Source: https://stackoverflow.com/a/2934602/9852028
-         * 
+         *
          * Decodes Unicode escape sequences like “\u00ed” to proper UTF-8 encoded characters
          */
         $string = preg_replace_callback('/\\\\u([0-9a-fA-F]{4})/', function ($match) {
@@ -378,7 +378,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     private function connect()
     {
         $user = $this->config['email'];
-        
+
         $credentials = [
             'client_id' => $this->config['client_id'] ?? config('services.gmail.client_id'),
             'client_secret' => $this->config['client_secret'] ?? config('services.gmail.client_secret'),

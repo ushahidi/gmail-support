@@ -40,7 +40,7 @@ class TokenConfigStorage implements TokenStorage
         ]);
 
         $dataProvider->setState([
-            'gmail' => $credentials 
+            'gmail' => $credentials
         ]);
 
         $this->configRepo->update($gmailConfig);
@@ -49,23 +49,21 @@ class TokenConfigStorage implements TokenStorage
 
     public function delete($email)
     {
+        if (!isset($email)) {
+            return;
+        }
+
         $gmailConfig = $this->configRepo->get('gmail');
         $dataProvider = $this->configRepo->get('data-provider');
         $credentials = $dataProvider->asArray()['gmail'];
 
-        $credentials['authenticated'] = false;
-
         unset($credentials['email']);
 
         $dataProvider->setState([
-            'gmail' => $credentials
+            'gmail' => ['authenticated' => false] + $credentials
         ]);
 
-        $gmailConfig->setState([
-            "token_for_{$email}" => [],
-        ]);
-
-        $this->configRepo->update($gmailConfig);
+        $this->configRepo->delete($gmailConfig);
         $this->configRepo->update($dataProvider);
     }
 }
