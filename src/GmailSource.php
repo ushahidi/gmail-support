@@ -251,59 +251,11 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                 ->take($limit)
                 ->all();
         } catch (Google_Service_Exception $e) {
+            report($e);
             $mails = $this->fullSync($mailbox, $limit);
         }
 
         return $mails;
-    }
-
-    /**
-     * Sanitize the BODY email text string
-     *
-     * @param string $text - message text string from email
-     * @return string
-     */
-    protected function getMessage($text)
-    {
-        $text = htmlspecialchars($text);
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_COMPAT, 'UTF-8');
-        $text = html_entity_decode($text, ENT_HTML5, 'UTF-8');
-        $text = preg_replace('@<style[^>]*?>.*?</style>@si', '', $text);
-        $text = str_replace("|a", "<a", strip_tags(str_replace("<a", "|a", $text)));
-        return $text;
-    }
-
-    /**
-     * Remove Emoji Characters in PHP
-     *
-     * Source: https://medium.com/coding-cheatsheet/remove-emoji-characters-in-php-236034946f51
-     *
-     * @param string $string
-     * @return string
-     */
-    protected function removeEmoji($string)
-    {
-        // Match Emoticons
-        $regex_emoticons = '/[\x{1F600}-\x{1F64F}]/u';
-        $clear_string = preg_replace($regex_emoticons, '', $string);
-
-        // Match Miscellaneous Symbols and Pictographs
-        $regex_symbols = '/[\x{1F300}-\x{1F5FF}]/u';
-        $clear_string = preg_replace($regex_symbols, '', $clear_string);
-
-        // Match Transport And Map Symbols
-        $regex_transport = '/[\x{1F680}-\x{1F6FF}]/u';
-        $clear_string = preg_replace($regex_transport, '', $clear_string);
-
-        // Match Miscellaneous Symbols
-        $regex_misc = '/[\x{2600}-\x{26FF}]/u';
-        $clear_string = preg_replace($regex_misc, '', $clear_string);
-
-        // Match Dingbats
-        $regex_dingbats = '/[\x{2700}-\x{27BF}]/u';
-        $clear_string = preg_replace($regex_dingbats, '', $clear_string);
-
-        return $clear_string;
     }
 
     /**
