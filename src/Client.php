@@ -87,7 +87,7 @@ class Client extends Google_Client
      */
     public function saveAccessToken(array $token)
     {
-        $token['email'] = isset($token['email']) ? $token['email'] : $this->user;
+        // $token['email'] = isset($token['email']) ? $token['email'] : $this->user;
 
         $this->storage->save($token);
     }
@@ -153,6 +153,7 @@ class Client extends Google_Client
     public function setUser($user)
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -171,6 +172,7 @@ class Client extends Google_Client
     public function setStorage(TokenStorage $storage)
     {
         $this->storage = $storage;
+
         return $this;
     }
 
@@ -183,8 +185,8 @@ class Client extends Google_Client
     {
         if ($this->isAccessTokenExpired()) {
             if ($refreshToken = $this->getRefreshToken()) {
-                $this->fetchAccessTokenWithRefreshToken($refreshToken);
-                $token = $this->getAccessToken();
+                $token = $this->fetchAccessTokenWithRefreshToken($refreshToken);
+                
                 $this->addAccessToken($token);
 
                 return $token;

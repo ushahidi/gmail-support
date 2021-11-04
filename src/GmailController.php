@@ -53,19 +53,23 @@ class GmailController
     public function authorize(Request $request)
     {
         $code = $request->input('code');
+        $date = $request->input('date');
 
-        $this->gmail->authenticate($code);
+        $token = $this->gmail->authenticate($code);
 
         $gmailConfig = $this->configRepo->get('gmail');
 
         $gmailConfig->setState([
-            "first_sync_date" => Carbon::parse($request->input('date'))->format('Y-m-d H:i:s'),
+            "first_sync_date" => Carbon::parse($date)->format('Y-m-d H:i:s'),
         ]);
 
         $this->configRepo->update($gmailConfig);
 
         return response()->json([
-            'message' => 'User auth token authorized'
+            'message' => 'User auth token authorized',
+            'data' => [
+                'email' => $token['email']
+            ]
         ], 200);
     }
 
