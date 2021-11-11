@@ -218,7 +218,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      *
      * @return \Illuminate\Support\Collection
      */
-    protected function fullSync($mailbox, $limit)
+    protected function fullSync(&$mailbox, $limit)
     {
         $mails = $mailbox->setSyncType("full");
 
@@ -245,11 +245,12 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
      *
      * @return \Illuminate\Support\Collection
      */
-    protected function partialSync($mailbox, $limit)
+    protected function partialSync(&$mailbox, $limit)
     {
         try {
             $mails = $mailbox->setSyncType("partial")
                 ->history($this->lastHistoryId)
+                // Only get messages added to the mailbox in this history record.
                 ->historyTypes("messageAdded")
                 ->take($limit)
                 ->all();
