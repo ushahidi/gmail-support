@@ -87,22 +87,20 @@ class Mailbox
     }
 
     /**
-     * Get a Mail
+     * Get a Mailbox Message
+     * 
      * @param string|Google_Service_Gmail_Message $message
      * 
      * @return Mail
      */
     public function get($message)
     {
-        if ($message instanceof Google_Service_Gmail_Message) {
-            if (isset($message->historyId)) {
-                return new Mail($message);
-            }
-
-            $message = $message->getId();
+        // if Message Format is MINIMAL, we need to get the full message
+        if ($message instanceof Google_Service_Gmail_Message && !isset($message->historyId)) {
+            $message = $this->getMessageRequest($message->getId());
         }
 
-        return new Mail($this->getMessageRequest($message));
+        return new Mail($message);
     }
 
     /**
@@ -112,17 +110,20 @@ class Mailbox
      */
     public function all()
     {
-        if ($this->type == 'full') {
-            $response = $this->listMessagesRequest();
-            $list = $response->getMessages();
-        } else if ($this->type == 'partial') {
-            $response = $this->listHistoryRequest();
-            $this->historyId = $response->getHistoryId();
-            $list = collect($response->getHistory())->map(function ($history) {
-                return collect($history->getMessages())->first();
-            });
-        } else {
-            return collect([]);
+        switch ($this->type) {
+            case 'full':
+                $response = $this->listMessagesRequest();
+                $list = $response->getMessages();
+                break;
+            case 'partial':
+                $response = $this->listHistoryRequest();
+                $this->historyId = $response->getHistoryId();
+                $list = collect($response->getHistory())->map(function ($history) {
+                    return collect($history->getMessages())->first();
+                });
+            default:
+                $messages = collect([]);
+                break;
         }
 
         $this->pageToken = method_exists($response, 'getNextPageToken') ? $response->getNextPageToken() : null;
@@ -140,12 +141,19 @@ class Mailbox
     {
         $batchMessages = collect([]);
 
-        $chunkMessagesList = collect($list)->chunk(100);
+        /**
+         * Limit of batch requests because Larger batch sizes are likely to trigger rate limiting. 
+         * Sending batches larger than 50 requests is not recommended.
+         * 
+         * From: https://developers.google.com/gmail/api/guides/batch#overview
+         */
+        $chunkMessagesList = collect($list)->chunk(50); 
 
         $this->client->setUseBatch(true);
 
         foreach ($chunkMessagesList as $chunkMessages) {
             $batch = $this->service->createBatch();
+            
             foreach ($chunkMessages as $key => $message) {
                 $batch->add(
                     $this->getMessageRequest($message->getId()), 

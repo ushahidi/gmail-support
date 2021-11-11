@@ -134,6 +134,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             ? $this->partialSync($mailbox, $limit)
             : $this->fullSync($mailbox, $limit);
 
+    
         // Check if the Mailbox has more mails and try to fetch them
         while ($mailbox->hasNextPage()) {
             $mails = $mails->merge($mails, $mailbox->next());
@@ -144,8 +145,6 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $this->lastHistoryId = optional($mails->first())->historyId ?? $mailbox->historyId;
 
         $this->lastSyncDate = Carbon::now()->format("Y-m-d H:i:s");
-
-        $messages = [];
 
         $messages = $mails->map(function ($mail) {
             if ($mail && !empty($mail->bodyParts)) {
@@ -229,9 +228,13 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             $mails->after(Carbon::parse($this->firstSyncDate)->timestamp);
         }
 
-        return $mails->label('INBOX')
-            ->take($limit)
-            ->all();
+        // Allows one to filter by label Ids e.g INBOX, UNREAD, SPAM, TRASHED, STARRED, IMPORTANT. For now default is INBOX
+        $mails->label('INBOX');
+
+        // Sets the limit of messages to fetch
+        $mails->take($limit);
+
+        return $mails->all();
     }
 
     /**
