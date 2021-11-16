@@ -26,7 +26,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     protected $config;
     protected $configRepo;
 
-    protected $pageToken; // get mails for a page
+    // protected $pageToken; // get mails for a page
     protected $firstSyncDate;
     protected $lastSyncDate;
     protected $lastHistoryId;
@@ -130,17 +130,17 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
          *
          * Read More: https://developers.google.com/gmail/api/guides/sync
          */
-        $mails = isset($this->lastHistoryId)
+        $mails = isset($this->lastHistoryId) 
             ? $this->partialSync($mailbox, $limit)
             : $this->fullSync($mailbox, $limit);
 
     
         // Check if the Mailbox has more mails and try to fetch them
-        while ($mailbox->hasNextPage()) {
-            $mails = $mails->merge($mails, $mailbox->next());
-        }
+        // while ($mailbox->hasNextPage()) {
+        //     $mails = $mails->merge($mails, $mailbox->next());
+        // }
 
-        $this->pageToken = $mailbox->pageToken;
+        // $this->pageToken = $mailbox->pageToken;
 
         $this->lastHistoryId = optional($mails->first())->historyId ?? $mailbox->historyId;
 
@@ -169,6 +169,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
             ->filter(function ($message) {
                 return !empty($message['message']);
             })
+            ->sortBy('datetime')
             ->all();
 
         $this->update();
@@ -296,9 +297,9 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     {
         $config = $this->configRepo->get('gmail');
 
-        isset($config->next_page_token)
-            ? $this->pageToken = $config->next_page_token
-            : $this->pageToken = null;
+        // isset($config->next_page_token)
+        //     ? $this->pageToken = $config->next_page_token
+        //     : $this->pageToken = null;
 
         isset($config->last_history_id)
             ? $this->lastHistoryId = $config->last_history_id
@@ -318,7 +319,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $config = $this->configRepo->get('gmail');
 
         $config->setState([
-            'next_page_token' => $this->pageToken,
+            // 'next_page_token' => $this->pageToken,
             'last_history_id' => $this->lastHistoryId,
             'last_sync_date'  => $this->lastSyncDate
         ]);

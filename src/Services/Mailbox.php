@@ -68,9 +68,10 @@ class Mailbox
      */
     public function next()
     {
-        if ($this->pageToken) {
-            if (isset($this->historyId)) $this->history($this->historyId);
-            return $this->page($this->pageToken)->all();
+        if ($this->historyId && $this->pageToken) {
+            $this->history($this->historyId);
+            $this->page($this->pageToken);
+            return $this->all();
         } else {
             return collect([]);
         }
