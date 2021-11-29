@@ -159,6 +159,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                     'datetime'               => $mail->date(),
                     'data_source_message_id' => $mail->id,
                     'additional_data'        => [
+                        'thread_id' => $mail->threadId
                         'history_id' => $mail->historyId
                     ],
                 ];
@@ -199,11 +200,15 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
         $mailer = $gmail->mailer();
 
         try {
-            $response =  $mailer->createMessage($title, $from, $to, $message)->send();
+            $mailer->createMessage($title, $from, $to, $message);
+            
+            $response = $mailer->send();
+            
             if (!isset($response->id)) {
                 app('log')->error("Gmail: Send failed", ['response' => $response]);
                 return [MessageStatus::FAILED, false];
             }
+    
             return [MessageStatus::SENT, $response->id];
         } catch (Exception $e) {
             app('log')->error($e->getMessage());

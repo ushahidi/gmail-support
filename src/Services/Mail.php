@@ -12,6 +12,8 @@ class Mail
 
     public $historyId;
 
+    public $threadId;
+
     public $payload;
 
     public $snippet;
@@ -24,7 +26,8 @@ class Mail
     {     
         $this->id = $message->getId();
         $this->historyId = $message->getHistoryId();
-
+        $this->threadId = $message->getThreadId();
+    
         $this->payload = $message->getPayload();
         $this->snippet = $message->getSnippet();
 
