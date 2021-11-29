@@ -159,7 +159,7 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
                     'datetime'               => $mail->date(),
                     'data_source_message_id' => $mail->id,
                     'additional_data'        => [
-                        'thread_id' => $mail->threadId
+                        'thread_id' => $mail->threadId,
                         'history_id' => $mail->historyId
                     ],
                 ];
