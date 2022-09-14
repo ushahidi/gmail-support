@@ -8,11 +8,11 @@ use Carbon\Carbon;
 use Google_Service_Exception;
 use Ushahidi\Contracts\Contact;
 use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
-use Ushahidi\Contracts\DataSource\IncomingDataSource;
-use Ushahidi\Contracts\DataSource\OutgoingDataSource;
-use Ushahidi\Concerns\DataSource\MapsInboundFields;
-use Ushahidi\Contracts\DataSource\MessageType;
-use Ushahidi\Contracts\DataSource\MessageStatus;
+use Ushahidi\DataSource\Contracts\IncomingDataSource;
+use Ushahidi\DataSource\Contracts\OutgoingDataSource;
+use Ushahidi\DataSource\Concerns\MapsInboundFields;
+use Ushahidi\DataSource\Contracts\MessageType;
+use Ushahidi\DataSource\Contracts\MessageStatus;
 
 class GmailSource implements IncomingDataSource, OutgoingDataSource
 {
