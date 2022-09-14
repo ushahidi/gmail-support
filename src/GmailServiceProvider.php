@@ -3,10 +3,48 @@
 namespace Ushahidi\Gmail;
 
 use Illuminate\Support\ServiceProvider;
+use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
 
 class GmailServiceProvider extends ServiceProvider
 {
+
     /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        $this->bootGmailSource();
+    }
+
+    /**
+     * Register the Gmail data source driver.
+     *
+     * @return void
+     */
+    private function bootGmailSource()
+    {
+        if (! $this->shouldRegisterGmailSourceDriver()) {
+            return;
+        }
+
+        $this->app['datasources']->extend('gmail', function ($config) {
+            return new GmailSource(
+                $config,
+                $this->app->make(ConfigRepository::class),
+                function ($user, $config = null)
+                {
+                    return $this->app->make('gmail', [
+                        'user' => $user,
+                        'config' => $config
+                    ]);
+                }
+            );
+        });
+    }
+
+        /**
      * Register the service provider.
      *
      * @return void
@@ -26,43 +64,11 @@ class GmailServiceProvider extends ServiceProvider
             return $app->make('gmail');
         });
 
-        $this->registerGmailSource();
-
         $this->registerGmailTransport();
 
+        $this->registerRoutes();
+
         $this->registerCommands();
-    }
-
-    /**
-     * Register the Gmail data source driver.
-     *
-     * @return void
-     */
-    private function registerGmailSource()
-    {
-        if (! $this->shouldRegisterGmailSourceDriver()) {
-            return;
-        }
-
-        $this->app['datasources']->extend('gmail', function ($config) {
-            return new GmailSource(
-                $config, 
-                $this->app->make('Ushahidi\Core\Entity\ConfigRepository'), 
-                function ($user, $config = null)
-                {
-                    return $this->app->make('gmail', [
-                        'user' => $user,
-                        'config' => $config
-                    ]);
-                }
-            );
-        });
-
-        $this->app->router->group([
-            'namespace' => 'Ushahidi\Gmail'
-        ], function($router) {
-            require __DIR__.'../../routes/route.php';
-        });
     }
 
     /**
@@ -102,11 +108,7 @@ class GmailServiceProvider extends ServiceProvider
      */
     protected function shouldRegisterGmailSourceDriver()
     {
-        if ($this->app->has('datasources')) {
-            return true;
-        }
-
-        return false;
+        return $this->app->has('datasources');
     }
 
     /**
@@ -123,10 +125,24 @@ class GmailServiceProvider extends ServiceProvider
         return $this->app['config']['mail.driver'] === 'gmail';
     }
 
-    public function registerCommands()
+    protected function registerRoutes()
+    {
+        $this->app->router->group([
+            'namespace' => 'Ushahidi\Gmail'
+        ], function($router) {
+            require __DIR__.'../../routes/route.php';
+        });
+    }
+
+    protected function registerCommands()
     {
         $this->commands([
             Console\AuthCommand::class,
         ]);
+    }
+
+    public function provides()
+    {
+        return ['gmail', Gmail::class];
     }
 }

@@ -6,15 +6,15 @@ use Closure;
 use Exception;
 use Carbon\Carbon;
 use Google_Service_Exception;
-use Ushahidi\Core\Entity\Contact;
-use Ushahidi\Core\Entity\ConfigRepository;
-use Ushahidi\App\DataSource\IncomingAPIDataSource;
-use Ushahidi\App\DataSource\OutgoingAPIDataSource;
-use Ushahidi\App\DataSource\Concerns\MapsInboundFields;
-use Ushahidi\App\DataSource\Message\Type as MessageType;
-use Ushahidi\App\DataSource\Message\Status as MessageStatus;
+use Ushahidi\Contracts\Contact;
+use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
+use Ushahidi\Contracts\DataSource\IncomingDataSource;
+use Ushahidi\Contracts\DataSource\OutgoingDataSource;
+use Ushahidi\Concerns\DataSource\MapsInboundFields;
+use Ushahidi\Contracts\DataSource\MessageType;
+use Ushahidi\Contracts\DataSource\MessageStatus;
 
-class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
+class GmailSource implements IncomingDataSource, OutgoingDataSource
 {
     use MapsInboundFields;
 
@@ -24,11 +24,16 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
     public $contact_type = Contact::EMAIL;
 
     protected $config;
+
     protected $configRepo;
+
+    protected $connectionFactory;
 
     // protected $pageToken; // get mails for a page
     protected $firstSyncDate;
+
     protected $lastSyncDate;
+
     protected $lastHistoryId;
 
     public function __construct(array $config, ConfigRepository $configRepo = null, Closure $connectionFactory = null)
@@ -130,11 +135,11 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
          *
          * Read More: https://developers.google.com/gmail/api/guides/sync
          */
-        $mails = isset($this->lastHistoryId) 
+        $mails = isset($this->lastHistoryId)
             ? $this->partialSync($mailbox, $limit)
             : $this->fullSync($mailbox, $limit);
 
-    
+
         // Check if the Mailbox has more mails and try to fetch them
         // while ($mailbox->hasNextPage()) {
         //     $mails = $mails->merge($mails, $mailbox->next());
@@ -201,14 +206,14 @@ class GmailSource implements IncomingAPIDataSource, OutgoingAPIDataSource
 
         try {
             $mailer->createMessage($title, $from, $to, $message);
-            
+
             $response = $mailer->send();
-            
+
             if (!isset($response->id)) {
                 app('log')->error("Gmail: Send failed", ['response' => $response]);
                 return [MessageStatus::FAILED, false];
             }
-    
+
             return [MessageStatus::SENT, $response->id];
         } catch (Exception $e) {
             app('log')->error($e->getMessage());

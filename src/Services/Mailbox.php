@@ -5,6 +5,8 @@ namespace Ushahidi\Gmail\Services;
 use Google_Client;
 use Google_Service_Gmail;
 use Google_Service_Gmail_Message;
+use Google\Service\Exception as Google_Service_Exception;
+use Illuminate\Support\Collection;
 
 class Mailbox
 {
@@ -90,7 +92,7 @@ class Mailbox
     /**
      * Get a Mailbox Message
      * 
-     * @param string|Google_Service_Gmail_Message $message
+     * @param Google_Service_Gmail_Message|Google_Service_Exception $message
      * 
      * @return Mail
      */
@@ -170,9 +172,20 @@ class Mailbox
         return $this->getMessages($batchMessages);
     }
 
+    /**
+     * 
+     * @param \Google_Service_Gmail_Message|Google_Service_Exception[] $list 
+     * 
+     * @return Collection 
+     */
     protected function getMessages($list)
     {
         return collect($list)->map(function ($message) {
+
+            if ($message instanceof Google_Service_Exception) {
+                return;
+            }
+            
             return $this->get($message);
         });
     }
@@ -180,7 +193,7 @@ class Mailbox
     /**
      * @param $id
      *
-     * @return Google_Service_Gmail_Message|\Psr\Http\Message\RequestInterface
+     * @return \Google_Service_Gmail_Message|\Psr\Http\Message\RequestInterface
      */
     private function getMessageRequest($id)
     {
@@ -189,7 +202,7 @@ class Mailbox
 
     /**
      *
-     * @return Google_Service_Gmail_ListMessagesResponse
+     * @return \Google_Service_Gmail_ListMessagesResponse
      */
     private function listMessagesRequest()
     {
@@ -198,7 +211,7 @@ class Mailbox
 
     /**
      *
-     * @return Google_Service_Gmail_ListHistoryResponse
+     * @return \Google_Service_Gmail_ListHistoryResponse
      */
     private function listHistoryRequest()
     {
