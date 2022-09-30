@@ -6,11 +6,11 @@ use Closure;
 use Exception;
 use Carbon\Carbon;
 use Google_Service_Exception;
-use Ushahidi\Contracts\Contact;
+use Ushahidi\Core\Entity\Contact;
 use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
 use Ushahidi\Contracts\DataSource\IncomingDataSource;
 use Ushahidi\Contracts\DataSource\OutgoingDataSource;
-use Ushahidi\Concerns\DataSource\MapsInboundFields;
+use Ushahidi\DataSource\Concerns\MapsInboundFields;
 use Ushahidi\Contracts\DataSource\MessageType;
 use Ushahidi\Contracts\DataSource\MessageStatus;
 
