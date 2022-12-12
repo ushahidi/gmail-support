@@ -6,7 +6,7 @@ use Closure;
 use Exception;
 use Carbon\Carbon;
 use Google_Service_Exception;
-use Ushahidi\Core\Entity\Contact;
+use Ushahidi\Contracts\Contact;
 use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
 use Ushahidi\DataSource\Contracts\IncomingDataSource;
 use Ushahidi\DataSource\Contracts\OutgoingDataSource;
