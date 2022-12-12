@@ -3,7 +3,7 @@
 namespace Ushahidi\Gmail;
 
 use Ushahidi\Gmail\Contracts\TokenStorage;
-use Ushahidi\Core\Entity\ConfigRepository;
+use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
 
 class TokenConfigStorage implements TokenStorage
 {

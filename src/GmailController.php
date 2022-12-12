@@ -4,7 +4,7 @@ namespace Ushahidi\Gmail;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Ushahidi\Core\Entity\ConfigRepository;
+use Ushahidi\Contracts\Repository\Entity\ConfigRepository;
 
 class GmailController
 {
